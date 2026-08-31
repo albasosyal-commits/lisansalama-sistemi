@@ -466,7 +466,8 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action, ...details }),
     });
-    const json = await res.json();
+    // Parse JSON before checking ok to avoid "Unexpected end of JSON input"
+    const json = await res.json().catch(() => ({ message: 'Sunucu geçersiz yanıt döndürdü (JSON parse hatası).' }));
     if (!res.ok) throw new Error(json.message || 'Kullanım durumu güncellenemedi');
 
     const updatedLicense: StoredLicense = json.data;
@@ -509,12 +510,13 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status }),
     });
-    const json = await res.json();
+    // Parse JSON before checking ok to avoid "Unexpected end of JSON input"
+    const json = await res.json().catch(() => ({ message: 'Sunucu geçersiz yanıt döndürdü (JSON parse hatası).' }));
     if (!res.ok) throw new Error(json.message || 'Lisans durumu güncellenemedi');
 
     const updatedLicense: StoredLicense = json.data;
 
-    // Safe background Firestore sync
+    // Safe background Firestore sync — write authoritative server response to Firestore
     safeFirestoreSync(setDoc(doc(db, LICENSES_COLLECTION, id), updatedLicense));
 
     return updatedLicense;
@@ -530,12 +532,15 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(params),
     });
-    const json = await res.json();
+    // Parse JSON before checking ok to avoid "Unexpected end of JSON input"
+    const json = await res.json().catch(() => ({ message: 'Sunucu geçersiz yanıt döndürdü (JSON parse hatası). Sunucunun çalıştığından emin olun.' }));
     if (!res.ok) throw new Error(json.message || 'Lisans süresi uzatılamadı');
+    if (!json.data) throw new Error(json.message || 'Sunucu geçerli lisans verisi döndürmedi.');
 
     const updatedLicense: StoredLicense = json.data;
 
-    // Safe background Firestore sync
+    // Sync updated license (with new raw_key and expires_at) to Firestore
+    // This ensures external apps that re-check via /api/v1/verify get the updated expiry
     safeFirestoreSync(setDoc(doc(db, LICENSES_COLLECTION, id), updatedLicense));
 
     return updatedLicense;

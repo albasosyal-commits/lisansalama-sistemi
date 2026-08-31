@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Sidebar, HeaderBar, TabType } from './components/Navbar';
 import { DashboardStats } from './components/DashboardStats';
 import { LicenseGenerator } from './components/LicenseGenerator';
@@ -19,6 +19,8 @@ import {
 import { api } from './services/api';
 import { DEFAULT_KEY_METADATA } from './data/defaultKeys';
 import { AlertCircle, RefreshCw } from 'lucide-react';
+import { db } from './firebase';
+import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('create');
@@ -42,6 +44,9 @@ export default function App() {
 
   // State passed to sandbox when user clicks "Sandbox'ta Test Et"
   const [sandboxLicenseKey, setSandboxLicenseKey] = useState<string>('');
+
+  // Track if initial load is done (to not block live listener)
+  const initialLoadDone = useRef(false);
 
   // Initial Data Fetcher
   const loadAllData = useCallback(async (isSilent = false) => {
@@ -68,6 +73,7 @@ export default function App() {
       }
       if (results[3].status === 'fulfilled') {
         setLicenses(results[3].value);
+        initialLoadDone.current = true;
       }
     } catch (err: any) {
       console.error('Error fetching application data:', err);
@@ -80,6 +86,55 @@ export default function App() {
   useEffect(() => {
     loadAllData();
   }, [loadAllData]);
+
+  // ——————————————————————————————————————————————————
+  // Gerçek Zamanlı Firestore Dinleyicisi
+  // Diğer uygulamaların /api/v1/verify üzerinden lisans aktive etmesi,
+  // durum değişikliği (pause/revoke), süre uzatma gibi işlemleri
+  // dashboard'a anlık yansıtır — manuel yenileme gerekmez.
+  // ——————————————————————————————————————————————————
+  useEffect(() => {
+    const licensesRef = collection(db, 'licenses');
+    const q = query(licensesRef, orderBy('created_at', 'desc'));
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        if (!initialLoadDone.current) return; // ilk yükleme bitmeden atla
+        const updated = snapshot.docs.map((d) => d.data() as StoredLicense);
+        setLicenses(updated);
+
+        // İstatistikleri de güncelle
+        const now = Date.now();
+        const active = updated.filter(
+          (l) => l.status === 'active' && new Date(l.expires_at).getTime() > now
+        ).length;
+        const revoked = updated.filter((l) => l.status === 'revoked').length;
+        const expired = updated.filter(
+          (l) => l.status !== 'revoked' && new Date(l.expires_at).getTime() <= now
+        ).length;
+        setStats((prev) =>
+          prev
+            ? {
+                ...prev,
+                totalLicenses: updated.length,
+                activeLicenses: active,
+                revokedLicenses: revoked,
+                expiredLicenses: expired,
+                usedCount: updated.filter((l) => l.is_used).length,
+                unusedCount: updated.filter((l) => !l.is_used).length,
+              }
+            : prev
+        );
+      },
+      (err) => {
+        console.warn('Canlı lisans dinleyici not:', err?.message || err);
+      }
+    );
+
+    return () => unsubscribe();
+  }, []);
+
 
   // Navigate to Sandbox with a specific license key
   const handleNavigateToVerifier = (key: string) => {
