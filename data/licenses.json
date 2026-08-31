@@ -1,0 +1,218 @@
+[
+  {
+    "license_id": "c47705de-82de-4484-a5c6-585b447a2979",
+    "product_id": "spor-kulubu-v1",
+    "product_name": "SPOR_KULUBU_V1",
+    "license_type": "demo",
+    "customer": "dddd",
+    "issued_at": "2026-08-30T00:07:03.463Z",
+    "expires_at": "2026-09-09T00:07:03.463Z",
+    "machine_id": null,
+    "status": "active",
+    "raw_key": "eyJsaWNlbnNlX2lkIjoiYzQ3NzA1ZGUtODJkZS00NDg0LWE1YzYtNTg1YjQ0N2EyOTc5IiwicHJvZHVjdF9pZCI6InNwb3Ita3VsdWJ1LXYxIiwibGljZW5zZV90eXBlIjoiZGVtbyIsImN1c3RvbWVyIjoiZGRkZCIsImlzc3VlZF9hdCI6IjIwMjYtMDgtMzBUMDA6MDc6MDMuNDYzWiIsImV4cGlyZXNfYXQiOiIyMDI2LTA5LTA5VDAwOjA3OjAzLjQ2M1oiLCJtYWNoaW5lX2lkIjpudWxsLCJleHRyYSI6eyJtb2R1bGVzIjpbImNvcmUiLCJleHBvcnQiLCJwcm8iXX19.kLLfkTfNTsMjwQzBLCRqNeoI8Yy3RStffSd8tQ2qNWK6rzXY+r7ky7EyKBA1WLP+gqdZAk81rvP0K1qS5IyvJ365c+5zYrx6HXpaWSZiJW7anauRad9AubgIyHAFFgQFgyB4QlNMSU9wH3LpDWLV/384xMYdd52+42E/n8JFIUyGKoU8ZhoMikwTC0eIy2RkLw915zSAKD5VVIaQ+NPo22st/kltR92d988PcFj+hE/b7WrWSTYe13qsuCA5TAM7AseH+4d1f4Pk0b7uC6K3bAl3urGprUikVbJ384SwSTgbLf52MvdMX0BPfkj6FayJ/pGtdgBaOxOHq6y8bhLkeQ==",
+    "created_at": "2026-08-30T00:07:04.536Z",
+    "extra": {
+      "modules": [
+        "core",
+        "export",
+        "pro"
+      ]
+    },
+    "logs": [
+      {
+        "id": "log-af319e43-39ce-453b-b5fe-8bbabfd0e6b0",
+        "timestamp": "2026-08-30T00:33:05.103Z",
+        "action": "unpaused",
+        "description": "Lisans dondurması kaldırıldı ve tekrar aktif edildi."
+      },
+      {
+        "id": "log-3dc54e96-a915-4328-9299-cb13d42b7352",
+        "timestamp": "2026-08-30T00:30:58.658Z",
+        "action": "paused",
+        "description": "Lisans geçici olarak donduruldu (paused).",
+        "details": {
+          "paused_at": "2026-08-30T00:30:58.658Z"
+        }
+      },
+      {
+        "id": "log-91e06ccc-6ead-4aae-b958-8902aed4af6e",
+        "timestamp": "2026-08-30T00:21:15.900Z",
+        "action": "activated",
+        "description": "Uygulama ilk kez bu lisans ile başarıyla giriş yaptı (Durum: \"Kullanımda\").",
+        "details": {
+          "machine_id": null,
+          "app_version": null,
+          "first_used_at": "2026-08-30T00:21:15.900Z",
+          "last_used_at": "2026-08-30T00:21:15.900Z",
+          "usage_count": 1
+        }
+      },
+      {
+        "id": "log-6d6acd17-0a4c-42ae-a38a-a5f06892cf1d",
+        "timestamp": "2026-08-30T00:07:04.536Z",
+        "action": "created",
+        "description": "Lisans \"dddd\" için Demo (10 Gün) lisansı olarak oluşturuldu. (Durum: Kullanımda Değil - Uygulama Girişi Bekleniyor)",
+        "details": {
+          "issued_at": "2026-08-30T00:07:03.463Z",
+          "expires_at": "2026-09-09T00:07:03.463Z",
+          "machine_id": null
+        }
+      }
+    ],
+    "is_used": true,
+    "usage_count": 1,
+    "first_used_at": "2026-08-30T00:21:15.900Z",
+    "last_used_at": "2026-08-30T00:21:15.900Z",
+    "last_machine_id": null,
+    "paused_at": null,
+    "revoked_at": null
+  },
+  {
+    "license_id": "934351ec-7d39-45a2-aecb-42befe64fc27",
+    "product_id": "spor-kulubu-v1",
+    "product_name": "SPOR_KULUBU_V1",
+    "license_type": "demo",
+    "customer": "asdsadasd",
+    "issued_at": "2026-08-30T00:06:14.528Z",
+    "expires_at": "2026-09-09T00:06:14.528Z",
+    "machine_id": null,
+    "status": "active",
+    "raw_key": "eyJsaWNlbnNlX2lkIjoiOTM0MzUxZWMtN2QzOS00NWEyLWFlY2ItNDJiZWZlNjRmYzI3IiwicHJvZHVjdF9pZCI6InNwb3Ita3VsdWJ1LXYxIiwibGljZW5zZV90eXBlIjoiZGVtbyIsImN1c3RvbWVyIjoiYXNkc2FkYXNkIiwiaXNzdWVkX2F0IjoiMjAyNi0wOC0zMFQwMDowNjoxNC41MjhaIiwiZXhwaXJlc19hdCI6IjIwMjYtMDktMDlUMDA6MDY6MTQuNTI4WiIsIm1hY2hpbmVfaWQiOm51bGwsImV4dHJhIjp7Im1vZHVsZXMiOlsiY29yZSIsImV4cG9ydCIsInBybyJdfX0=.SrQ9DjIN4TKQNcX/XuTCRhxS70YJy2ras+8AgHhLaCfIydkH+mkrOxAw2zNP0Ox/TAk24/5tJ1Nn5WVJ6rEdAqemFlRxLwQsq6lwow/ikPFxh5J7HuTBPBHQ9MOLzQ108SWpY2zE7rC3nwvsIqIaHw8ftdvauJ+tqyyfqutTFmBA5BVCtTl8uQ4Ax2XK5CJ/wuK52SUYGxkwQaVCtBoAlL7uXCXAgbpxWSnQwmvkBhDNVr0e/uHX7WsFHnespO5bfCZVWPmunq5g0szXSTGCFo20jMZjQVrlHkaFVGtVnaWUbogo4Z/xG1wOpbMHLh1URiloyr3CCtjXXdmXlLaxcg==",
+    "created_at": "2026-08-30T00:06:15.865Z",
+    "extra": {
+      "modules": [
+        "core",
+        "export",
+        "pro"
+      ]
+    },
+    "logs": [
+      {
+        "id": "log-6bc0510a-5759-4c28-adba-56219015d95b",
+        "timestamp": "2026-08-30T00:06:15.865Z",
+        "action": "created",
+        "description": "Lisans \"asdsadasd\" için Demo (10 Gün) lisansı olarak oluşturuldu. (Durum: Kullanımda Değil - Uygulama Girişi Bekleniyor)",
+        "details": {
+          "issued_at": "2026-08-30T00:06:14.528Z",
+          "expires_at": "2026-09-09T00:06:14.528Z",
+          "machine_id": null
+        }
+      }
+    ],
+    "is_used": false,
+    "usage_count": 0,
+    "first_used_at": null,
+    "last_used_at": null,
+    "last_machine_id": null
+  },
+  {
+    "license_id": "596f6428-41a5-439a-96fd-b677c1a7dcbf",
+    "product_id": "spor-kulubu-v1",
+    "product_name": "SPOR_KULUBU_V1",
+    "license_type": "demo",
+    "customer": "aa",
+    "issued_at": "2026-08-29T23:51:59.136Z",
+    "expires_at": "2026-10-08T23:51:59.136Z",
+    "machine_id": null,
+    "status": "paused",
+    "raw_key": "eyJsaWNlbnNlX2lkIjoiNTk2ZjY0MjgtNDFhNS00MzlhLTk2ZmQtYjY3N2MxYTdkY2JmIiwicHJvZHVjdF9pZCI6InNwb3Ita3VsdWJ1LXYxIiwibGljZW5zZV90eXBlIjoiZGVtbyIsImN1c3RvbWVyIjoiYWEiLCJpc3N1ZWRfYXQiOiIyMDI2LTA4LTI5VDIzOjUxOjU5LjEzNloiLCJleHBpcmVzX2F0IjoiMjAyNi0xMC0wOFQyMzo1MTo1OS4xMzZaIiwibWFjaGluZV9pZCI6bnVsbCwiZXh0cmEiOnsibW9kdWxlcyI6WyJjb3JlIiwiZXhwb3J0IiwicHJvIl19fQ==.mnIaO3Kds9mrSKh0NutQHZcQuWu4/9CeBpIyinRgYa4+ooBVAb7UnPsfZOXpf4tmmtCgvxfSbW1n9UVhk6IIlvvYpXHph4QtbBGXSIWX6EkcVm6vboSml4rRwYl+dA5+NetvP92a5fLFoJIHfk2dcngKCeGL/xhjluweJvT/D9pqCwlRLkOiKMhDOT6y4R2qg6lDORZDySUk0acYQLkSrFY9+VXKfOSnNeFzvsjMcoGu/9ORqjlOpeKrMG1+9w7QjQbIquLRZJjLWe6au4u0oP76lSjQlNoXYFYFpeSodvXDBequBGcKcj1spyVl5+9IQekS6JH9Gx9hYeASGijivQ==",
+    "created_at": "2026-08-29T23:52:01.357Z",
+    "extra": {
+      "modules": [
+        "core",
+        "export",
+        "pro"
+      ]
+    },
+    "logs": [
+      {
+        "id": "log-7656b4f2-6728-4cad-bc59-26913f0f450f",
+        "timestamp": "2026-08-29T23:57:25.700Z",
+        "action": "paused",
+        "description": "Lisans geçici olarak donduruldu (paused).",
+        "details": {
+          "paused_at": "2026-08-29T23:57:25.700Z"
+        }
+      },
+      {
+        "id": "log-92a9d53e-65d3-47b9-93d5-b26a9788cd42",
+        "timestamp": "2026-08-29T23:54:16.271Z",
+        "action": "extended",
+        "description": "Lisans süresi 08.09.2026 tarihinden 08.10.2026 tarihine kadar uzatıldı.",
+        "details": {
+          "previous_expires_at": "2026-10-08T23:51:59.136Z",
+          "new_expires_at": "2026-10-08T23:51:59.136Z",
+          "extend_days": 30
+        }
+      },
+      {
+        "id": "log-21a163bc-f7ac-4ad4-8f47-52dfc3265179",
+        "timestamp": "2026-08-29T23:52:01.357Z",
+        "action": "created",
+        "description": "Lisans \"aa\" için Demo (10 Gün) lisansı olarak oluşturuldu.",
+        "details": {
+          "issued_at": "2026-08-29T23:51:59.136Z",
+          "expires_at": "2026-09-08T23:51:59.136Z",
+          "machine_id": null
+        }
+      }
+    ],
+    "paused_at": "2026-08-29T23:57:25.700Z",
+    "revoked_at": null
+  },
+  {
+    "license_id": "d7d1ef9d-4f33-4b02-be38-2f83298c3750",
+    "product_id": "spor-kulubu-v1",
+    "product_name": "SPOR_KULUBU_V1",
+    "license_type": "demo",
+    "customer": "a",
+    "issued_at": "2026-08-29T23:45:23.473Z",
+    "expires_at": "2026-12-07T23:45:23.473Z",
+    "machine_id": null,
+    "status": "revoked",
+    "raw_key": "eyJsaWNlbnNlX2lkIjoiZDdkMWVmOWQtNGYzMy00YjAyLWJlMzgtMmY4MzI5OGMzNzUwIiwicHJvZHVjdF9pZCI6InNwb3Ita3VsdWJ1LXYxIiwibGljZW5zZV90eXBlIjoiZGVtbyIsImN1c3RvbWVyIjoiYSIsImlzc3VlZF9hdCI6IjIwMjYtMDgtMjlUMjM6NDU6MjMuNDczWiIsImV4cGlyZXNfYXQiOiIyMDI2LTEyLTA3VDIzOjQ1OjIzLjQ3M1oiLCJtYWNoaW5lX2lkIjpudWxsLCJleHRyYSI6eyJtb2R1bGVzIjpbImNvcmUiLCJleHBvcnQiLCJwcm8iXX19.eK751JbYxfhhDvuvvWRRC1WMBkbw2KinOf5PZFwduT/zq8FaIOyoPKpD06nBb73CQdBxjLVU1d6t0aThg6NWnvpGGsiI94UnSaLILKSMAW2mdwa4ljWvtRoBddFYrAvdPoWcGvfGDSzuSZlHZd1OleilPw60YO77xsJQv9IPTGvMcfnDcFA6Z1dr8OAlKhjDk0L8r5hnznaTSgTtXIxFh5ZjHIB0jBhycwof25z9B4HgzxNahnyw+iKT8fOL80qUEzvWboFpHdhg9s3BCapeD49y+puw/E0Oy+FMQTQA5Zwa3N60SLPItvF/EGUBxFMARklv554tcLVMsD/S4zHhhg==",
+    "created_at": "2026-08-29T23:45:40.244Z",
+    "extra": {
+      "modules": [
+        "core",
+        "export",
+        "pro"
+      ]
+    },
+    "logs": [
+      {
+        "id": "log-f63dd74b-cf31-4785-b117-97d5cea66404",
+        "timestamp": "2026-08-29T23:55:52.479Z",
+        "action": "revoked",
+        "description": "Lisans yönetici tarafından iptal edildi (revoked).",
+        "details": {
+          "revoked_at": "2026-08-29T23:55:52.479Z"
+        }
+      },
+      {
+        "id": "log-f860bcba-2bf1-4c27-b144-cbd38faaaa39",
+        "timestamp": "2026-08-29T23:53:40.625Z",
+        "action": "extended",
+        "description": "Lisans süresi 08.09.2026 tarihinden 07.12.2026 tarihine kadar uzatıldı.",
+        "details": {
+          "previous_expires_at": "2026-12-07T23:45:23.473Z",
+          "new_expires_at": "2026-12-07T23:45:23.473Z",
+          "extend_days": 90
+        }
+      },
+      {
+        "id": "log-11ae7446-c826-47ba-9dcb-6a3113ae559e",
+        "timestamp": "2026-08-29T23:45:40.244Z",
+        "action": "created",
+        "description": "Lisans \"a\" için Demo (10 Gün) lisansı olarak oluşturuldu.",
+        "details": {
+          "issued_at": "2026-08-29T23:45:23.473Z",
+          "expires_at": "2026-09-08T23:45:23.473Z",
+          "machine_id": null
+        }
+      }
+    ],
+    "revoked_at": "2026-08-29T23:55:52.479Z",
+    "paused_at": null
+  }
+]

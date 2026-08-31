@@ -1,0 +1,6 @@
+{
+  "firestore": {
+    "database": "lisanslamaaaa",
+    "rules": "firestore.rules"
+  }
+}

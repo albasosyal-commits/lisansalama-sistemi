@@ -1,0 +1,17 @@
+import { KeyMetadata } from '../types';
+
+export const DEFAULT_KEY_METADATA: KeyMetadata = {
+  algorithm: 'RSA-SHA256 (2048 bit)',
+  keySize: 2048,
+  created_at: '2026-08-29T23:29:47.541Z',
+  fingerprint: '9D:F0:99:B9:51:D5:2E:9D:76:4D:A5:6E:F5:74:58:E3:71:45:2D:97:33:7F:14:2D:A1:52:58:E4:81:40:CE:F4',
+  publicKey: `-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA7u+PFFQPYcTRo958o6P9
+rX3c8XKpnFOqUpdmF0PALvh47WairqVbL4cR3YcyA7nNCNlU0o1A70pZ25MOCk90
+uxSoU9yi01XGLcxLwtqVFWQO59PPkGM2Ih+w/e+oYlo/HjslNbN3ULXaVWEzhoIl
+zpqc630YqcsA+XzxH5zgIkvUMLdKFBPSHM3d+yxDxMAuIQA575aQxW8hrQ/niNTM
+5i5pJJWEefK5jBiycqAQTH6dbTDy3sdUcZ8H13C3FOLqG1yqrGIAREjeWX42aDI2
+A8GdONJVcrtRAVvvWKuTyOZ5bWqNjmlwB5MnVhiC/W+4boPkZhf7XyQkyy/Qmget
+sQIDAQAB
+-----END PUBLIC KEY-----`,
+};

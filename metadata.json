@@ -1,0 +1,6 @@
+{
+  "name": "Lisans Yöneticisi (License Manager)",
+  "description": "RSA-SHA256 dijital imzalı lisans üretimi, ürün yönetimi, çevrimdışı ve çevrimiçi doğrulama paneli.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

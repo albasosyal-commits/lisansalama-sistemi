@@ -1,0 +1,51 @@
+{
+  "entities": {
+    "products": {
+      "title": "Products",
+      "description": "Products managed in the license system",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "productId": { "type": "string" },
+        "description": { "type": "string" },
+        "version": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "name", "productId"]
+    },
+    "licenses": {
+      "title": "Licenses",
+      "description": "Licenses generated and managed",
+      "type": "object",
+      "properties": {
+        "license_id": { "type": "string" },
+        "product_id": { "type": "string" },
+        "product_name": { "type": "string" },
+        "customer": { "type": "string" },
+        "license_type": { "type": "string" },
+        "issued_at": { "type": "string" },
+        "expires_at": { "type": "string" },
+        "machine_id": { "type": "string" },
+        "status": { "type": "string" },
+        "raw_key": { "type": "string" },
+        "created_at": { "type": "string" },
+        "revoked_at": { "type": "string" },
+        "paused_at": { "type": "string" },
+        "notes": { "type": "string" },
+        "logs": { "type": "array" }
+      },
+      "required": ["license_id", "product_id", "customer", "license_type", "issued_at", "expires_at", "status", "raw_key"]
+    }
+  },
+  "firestore": {
+    "/products/{productId}": {
+      "schema": "products",
+      "description": "Collection of software products"
+    },
+    "/licenses/{licenseId}": {
+      "schema": "licenses",
+      "description": "Collection of generated licenses"
+    }
+  }
+}
