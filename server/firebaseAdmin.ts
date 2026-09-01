@@ -424,36 +424,49 @@ export async function getLicenses(): Promise<StoredLicense[]> {
 }
 
 export async function getLicenseById(licenseId: string): Promise<StoredLicense | null> {
+  // 1. Check in-memory cache first — avoids slow Firestore round-trip
+  if (cachedLicenses) {
+    const cached = cachedLicenses.find((l) => l.license_id === licenseId);
+    if (cached) return cached;
+  }
+
+  // 2. Fall back to Firestore only if not cached
   try {
     const db = getFirestoreDb();
     const docRef = doc(db, COLLECTIONS.LICENSES, licenseId);
     const snap = await getDoc(docRef);
     if (snap.exists()) {
-      return snap.data() as StoredLicense;
+      const lic = snap.data() as StoredLicense;
+      // Populate cache entry
+      if (!cachedLicenses) cachedLicenses = [];
+      const idx = cachedLicenses.findIndex((l) => l.license_id === licenseId);
+      if (idx >= 0) cachedLicenses[idx] = lic;
+      else cachedLicenses.unshift(lic);
+      return lic;
     }
   } catch (err) {
     console.warn("Firestore getLicenseById error:", err);
   }
 
-  if (cachedLicenses) {
-    return cachedLicenses.find((l) => l.license_id === licenseId) || null;
-  }
   return null;
 }
 
 export async function saveLicense(license: StoredLicense): Promise<void> {
+  // Update in-memory cache synchronously first — subsequent reads are instant
+  if (!cachedLicenses) cachedLicenses = [];
+  const idx = cachedLicenses.findIndex((l) => l.license_id === license.license_id);
+  if (idx >= 0) {
+    cachedLicenses[idx] = license;
+  } else {
+    cachedLicenses.unshift(license);
+  }
+
+  // Persist to Firestore in background (non-blocking)
   const db = getFirestoreDb();
   const docRef = doc(db, COLLECTIONS.LICENSES, license.license_id);
-  await setDoc(docRef, sanitizeForFirestore(license), { merge: true });
-
-  if (cachedLicenses) {
-    const idx = cachedLicenses.findIndex((l) => l.license_id === license.license_id);
-    if (idx >= 0) {
-      cachedLicenses[idx] = license;
-    } else {
-      cachedLicenses.unshift(license);
-    }
-  }
+  setDoc(docRef, sanitizeForFirestore(license), { merge: true }).catch((err) => {
+    console.error("Firestore saveLicense write error:", err);
+  });
 }
 
 export async function deleteLicense(licenseId: string): Promise<void> {
