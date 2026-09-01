@@ -9,6 +9,7 @@ import { LicenseVerifierSandbox } from './components/LicenseVerifierSandbox';
 import { CodeSnippetsView } from './components/CodeSnippetsView';
 import { DocumentationView } from './components/DocumentationView';
 import { FirebaseStatusView } from './components/FirebaseStatusView';
+import { ApiDiagnosticsView } from './components/ApiDiagnosticsView';
 
 import {
   DashboardStats as StatsType,
@@ -254,6 +255,8 @@ export default function App() {
               )}
 
               {activeTab === 'firebase' && <FirebaseStatusView />}
+
+              {activeTab === 'diagnostics' && <ApiDiagnosticsView />}
 
               {activeTab === 'docs' && <DocumentationView />}
             </div>

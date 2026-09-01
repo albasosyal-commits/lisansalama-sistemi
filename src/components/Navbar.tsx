@@ -14,10 +14,11 @@ import {
   Layers,
   Lock,
   Database,
+  Activity,
 } from 'lucide-react';
 import { DashboardStats, KeyMetadata } from '../types';
 
-export type TabType = 'create' | 'list' | 'products' | 'keys' | 'verifier' | 'snippets' | 'firebase' | 'docs';
+export type TabType = 'create' | 'list' | 'products' | 'keys' | 'verifier' | 'snippets' | 'firebase' | 'diagnostics' | 'docs';
 
 interface NavbarProps {
   activeTab: TabType;
@@ -46,6 +47,7 @@ export const Sidebar: React.FC<NavbarProps> = ({
     { id: 'verifier' as TabType, label: 'Doğrulama Sandbox', icon: ShieldCheck, desc: 'Çevrimdışı & Çevrimiçi' },
     { id: 'snippets' as TabType, label: 'SDK & Entegrasyon', icon: Code2, desc: 'Python, Node, C#, Go' },
     { id: 'firebase' as TabType, label: 'Firebase & Firestore', icon: Database, desc: 'Bulut Veritabanı Bağlantısı' },
+    { id: 'diagnostics' as TabType, label: 'API Tanılama', icon: Activity, desc: 'Servis & Hata Testi' },
     { id: 'docs' as TabType, label: 'Mimari Dokümanı', icon: BookOpen, desc: 'Kriptografi Kılavuzu' },
   ];
 
@@ -199,6 +201,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
     verifier: { title: 'Lisans Doğrulama Sandbox', subtitle: 'Çevrimdışı (offline) ve çevrimiçi (online) test motoru' },
     snippets: { title: 'SDK & Entegrasyon Kodları', subtitle: 'Python, Node.js, C#, PHP ve Go doğrulama kodları' },
     firebase: { title: 'Firebase & Firestore Veritabanı', subtitle: 'Bulut Firestore bağlantı durumu, yapılandırma ve koleksiyonlar' },
+    diagnostics: { title: 'API Tanılama Merkezi', subtitle: 'Servis sağlık kontrolü, lisans testi ve hata kodu referansı' },
     docs: { title: 'Mimari Dokümantasyon', subtitle: 'Çalışma prensibi, güvenlik önlemleri ve format özellikleri' },
   };
 
