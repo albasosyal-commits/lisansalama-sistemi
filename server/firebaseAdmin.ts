@@ -461,12 +461,20 @@ export async function saveLicense(license: StoredLicense): Promise<void> {
     cachedLicenses.unshift(license);
   }
 
-  // Persist to Firestore in background (non-blocking)
+  // Persist to Firestore ve BEKLE (await). Vercel serverless fonksiyonları
+  // yanıt gönderildikten hemen sonra donabildiği için burada "arka planda"
+  // (non-blocking, await'siz) bir yazma yapılırsa Firestore'a hiç ulaşmadan
+  // fonksiyon donabilir ve lisans güncellemesi sessizce kaybolur. Bu yüzden
+  // in-memory cache (yalnızca uzun ömürlü yerel Express sunucusunda faydalı)
+  // güncellendikten sonra Firestore yazması mutlaka await edilir.
   const db = getFirestoreDb();
   const docRef = doc(db, COLLECTIONS.LICENSES, license.license_id);
-  setDoc(docRef, sanitizeForFirestore(license), { merge: true }).catch((err) => {
+  try {
+    await setDoc(docRef, sanitizeForFirestore(license), { merge: true });
+  } catch (err) {
     console.error("Firestore saveLicense write error:", err);
-  });
+    throw err;
+  }
 }
 
 export async function deleteLicense(licenseId: string): Promise<void> {
