@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'http';
-import { getKeyMetadata } from '../server/firebaseAdmin.js';
+import { getKeyMetadata } from '../../server/firebaseAdmin.js';
 
 export default async function handler(req: IncomingMessage, res: ServerResponse) {
   res.setHeader('Content-Type', 'application/json');
