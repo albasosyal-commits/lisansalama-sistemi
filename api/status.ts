@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'http';
-import { getLicenses, getProducts, getKeyMetadata } from '../firestoreStore.js';
+import { getLicenses, getProducts, getKeyMetadata } from '../server/firebaseAdmin.js';
 
 export default async function handler(req: IncomingMessage, res: ServerResponse) {
   res.setHeader('Content-Type', 'application/json');
