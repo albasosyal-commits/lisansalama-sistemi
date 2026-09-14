@@ -1,8 +1,10 @@
 import type { IncomingMessage, ServerResponse } from 'http';
-import { getKeyMetadata, getPublicKeyPem, regenerateKeyPair } from '../../server/firebaseAdmin.js';
+import { getPublicKeyPem, regenerateKeyPair } from '../../server/firebaseAdmin.js';
 
-// Tek dosyada birleştirilmiş: GET /api/keys, GET /api/keys/public.pem, POST /api/keys/regenerate
-// (Vercel'in serverless function sayısı sınırını aşmamak için optional catch-all kullanıldı.)
+// GET /api/keys/public.pem, POST /api/keys/regenerate
+// (Vercel Serverless Functions - Next.js olmayan projelerde optional catch-all
+// [[...x]] desteklenmiyor; bu yüzden zorunlu catch-all [...x] kullanıldı ve
+// segmentsiz kök yol için ayrı api/keys.ts dosyası var.)
 export default async function handler(
   req: IncomingMessage & { query?: any },
   res: ServerResponse
@@ -48,13 +50,6 @@ export default async function handler(
           },
         })
       );
-      return;
-    }
-
-    if (!action && req.method === 'GET') {
-      const meta = await getKeyMetadata();
-      res.statusCode = 200;
-      res.end(JSON.stringify({ success: true, data: meta }));
       return;
     }
 

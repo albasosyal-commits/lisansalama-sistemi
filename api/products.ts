@@ -1,14 +1,10 @@
 import type { IncomingMessage, ServerResponse } from 'http';
-import { getProducts, getLicenses, saveProduct, deleteProduct, Product } from '../../server/firebaseAdmin.js';
+import { getProducts, getLicenses, saveProduct, Product } from '../server/firebaseAdmin.js';
 
-// Tek dosyada birleştirilmiş: GET/POST /api/products, DELETE /api/products/:id
-export default async function handler(
-  req: IncomingMessage & { query?: any; body?: any },
-  res: ServerResponse
-) {
+export default async function handler(req: IncomingMessage & { body?: any }, res: ServerResponse) {
   res.setHeader('Content-Type', 'application/json');
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') {
@@ -17,12 +13,10 @@ export default async function handler(
     return;
   }
 
-  const segments: string[] = ([] as string[]).concat(req.query?.id || []);
-  const idParam = segments[0];
-
   try {
-    if (req.method === 'GET' && !idParam) {
+    if (req.method === 'GET') {
       const [products, licenses] = await Promise.all([getProducts(), getLicenses()]);
+
       const productsWithCount = products.map((prod) => {
         const count = licenses.filter((l) => l.product_id === prod.productId).length;
         const activeCount = licenses.filter(
@@ -33,26 +27,36 @@ export default async function handler(
         ).length;
         return { ...prod, licenseCount: count, activeLicenseCount: activeCount };
       });
+
       res.statusCode = 200;
       res.end(JSON.stringify({ success: true, data: productsWithCount }));
       return;
     }
 
-    if (req.method === 'POST' && !idParam) {
+    if (req.method === 'POST') {
       const { name, productId, description, version } = req.body || {};
       if (!name || !productId) {
         res.statusCode = 400;
         res.end(
-          JSON.stringify({ success: false, message: 'Ürün adı ve Ürün Kodu (product_id) zorunludur.' })
+          JSON.stringify({
+            success: false,
+            message: 'Ürün adı ve Ürün Kodu (product_id) zorunludur.',
+          })
         );
         return;
       }
 
       const cleanProductId = String(productId).trim().toLowerCase().replace(/[^a-z0-9-_]/g, '-');
       const products = await getProducts();
+
       if (products.some((p) => p.productId === cleanProductId)) {
         res.statusCode = 400;
-        res.end(JSON.stringify({ success: false, message: 'Bu Ürün Kodu (product_id) zaten kullanımda.' }));
+        res.end(
+          JSON.stringify({
+            success: false,
+            message: 'Bu Ürün Kodu (product_id) zaten kullanımda.',
+          })
+        );
         return;
       }
 
@@ -66,31 +70,22 @@ export default async function handler(
       };
 
       await saveProduct(newProduct);
+
       res.statusCode = 201;
       res.end(
-        JSON.stringify({ success: true, data: newProduct, message: 'Ürün başarıyla Firestore veritabanına eklendi.' })
+        JSON.stringify({
+          success: true,
+          data: newProduct,
+          message: 'Ürün başarıyla Firestore veritabanına eklendi.',
+        })
       );
       return;
     }
 
-    if (req.method === 'DELETE' && idParam) {
-      const cleanId = idParam.trim().toLowerCase();
-      const products = await getProducts();
-      const product = products.find((p) => p.id === cleanId || p.productId === cleanId);
-      const targetId = product ? product.productId : cleanId;
-
-      await deleteProduct(targetId);
-      res.statusCode = 200;
-      res.end(
-        JSON.stringify({ success: true, message: `Ürün (${targetId}) başarıyla Firestore veritabanından silindi.` })
-      );
-      return;
-    }
-
-    res.statusCode = 404;
-    res.end(JSON.stringify({ success: false, message: 'Not found' }));
+    res.statusCode = 405;
+    res.end(JSON.stringify({ success: false, message: 'Method not allowed' }));
   } catch (err: any) {
     res.statusCode = 500;
-    res.end(JSON.stringify({ success: false, message: err?.message || 'Ürün işlemi başarısız.' }));
+    res.end(JSON.stringify({ success: false, message: err?.message || 'Ürünler alınamadı.' }));
   }
 }
