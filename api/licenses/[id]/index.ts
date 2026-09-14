@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'http';
-import { getLicenseById, deleteLicense } from '../../server/firebaseAdmin.js';
+import { getLicenseById, deleteLicense } from '../../../server/firebaseAdmin.js';
 
 export default async function handler(
   req: IncomingMessage & { query?: any },
