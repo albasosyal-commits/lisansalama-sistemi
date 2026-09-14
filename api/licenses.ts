@@ -8,7 +8,7 @@ import {
   signLicensePayload,
   StoredLicense,
   LicensePayload,
-} from '../../server/firebaseAdmin.js';
+} from '../server/firebaseAdmin.js';
 
 export default async function handler(
   req: IncomingMessage & { body?: any; query?: any },

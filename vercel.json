@@ -1,8 +1,13 @@
 {
   "rewrites": [
-    {
-      "source": "/((?!api/).*)",
-      "destination": "/index.html"
-    }
+    { "source": "/api/keys/public.pem", "destination": "/api/keys?format=pem" },
+    { "source": "/api/keys/regenerate", "destination": "/api/keys?action=regenerate" },
+    { "source": "/api/firebase-config/reset", "destination": "/api/firebase-config?action=reset" },
+    { "source": "/api/products/:id", "destination": "/api/product-item?id=:id" },
+    { "source": "/api/licenses/:id/status", "destination": "/api/license-item?id=:id&action=status" },
+    { "source": "/api/licenses/:id/extend", "destination": "/api/license-item?id=:id&action=extend" },
+    { "source": "/api/licenses/:id/usage", "destination": "/api/license-item?id=:id&action=usage" },
+    { "source": "/api/licenses/:id", "destination": "/api/license-item?id=:id" },
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }

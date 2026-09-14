@@ -1,6 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'http';
-import { getProducts, deleteProduct } from '../../server/firebaseAdmin.js';
+import { getProducts, deleteProduct } from '../server/firebaseAdmin.js';
 
+// DELETE /api/products/:id (vercel.json rewrite) -> /api/product-item?id=:id
 export default async function handler(
   req: IncomingMessage & { query?: any },
   res: ServerResponse

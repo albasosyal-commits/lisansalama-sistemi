@@ -13,7 +13,11 @@ const DEFAULT_FIREBASE_CONFIG = {
   recaptchaSiteKey: '',
 };
 
-export default function handler(req: IncomingMessage & { body?: any }, res: ServerResponse) {
+// POST /api/firebase-config/reset (rewrite) -> /api/firebase-config?action=reset
+export default function handler(
+  req: IncomingMessage & { body?: any; query?: any },
+  res: ServerResponse
+) {
   res.setHeader('Content-Type', 'application/json');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -22,6 +26,18 @@ export default function handler(req: IncomingMessage & { body?: any }, res: Serv
   if (req.method === 'OPTIONS') {
     res.statusCode = 200;
     res.end();
+    return;
+  }
+
+  if (req.query?.action === 'reset') {
+    res.statusCode = 200;
+    res.end(
+      JSON.stringify({
+        success: true,
+        message: 'Firebase ayarları varsayılana sıfırlandı.',
+        data: DEFAULT_FIREBASE_CONFIG,
+      })
+    );
     return;
   }
 
