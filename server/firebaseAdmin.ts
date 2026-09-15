@@ -147,20 +147,29 @@ export function getFingerprint(publicKeyPem: string): string {
   return hash.match(/.{1,2}/g)?.join(":").toUpperCase() || hash;
 }
 
-// Sanitize objects for Firestore (removes undefined values)
-export function sanitizeForFirestore<T extends Record<string, any>>(obj: T): T {
-  const clean: any = {};
-  for (const [key, value] of Object.entries(obj)) {
-    if (value === undefined) {
-      continue;
-    }
-    if (value !== null && typeof value === "object" && !Array.isArray(value)) {
-      clean[key] = sanitizeForFirestore(value);
-    } else {
-      clean[key] = value;
-    }
+// Sanitize objects for Firestore (removes undefined values).
+// ÖNEMLİ: Diziler (ör. logs) de recursive olarak temizlenir — eskiden diziler
+// atlanıyordu, bu yüzden ör. addLicenseLog'un eklediği { details: undefined }
+// alanı içeren bir log kaydı Firestore'a "Unsupported field value: undefined"
+// hatasıyla yazma başarısız oluyordu (ör. lisansı yeniden aktif etme sırasında).
+export function sanitizeForFirestore<T>(obj: T): T {
+  if (obj === undefined || obj === null) {
+    return obj;
   }
-  return clean as T;
+  if (Array.isArray(obj)) {
+    return obj.map((item) => sanitizeForFirestore(item)) as any;
+  }
+  if (typeof obj === "object") {
+    const clean: any = {};
+    for (const [key, value] of Object.entries(obj as Record<string, any>)) {
+      if (value === undefined) {
+        continue;
+      }
+      clean[key] = sanitizeForFirestore(value);
+    }
+    return clean as T;
+  }
+  return obj;
 }
 
 // ----------------------------------------------------
