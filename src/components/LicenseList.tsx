@@ -30,14 +30,12 @@ interface LicenseListProps {
   licenses: StoredLicense[];
   products: Product[];
   onRefresh: () => void;
-  onNavigateToVerifier: (key: string) => void;
 }
 
 export const LicenseList: React.FC<LicenseListProps> = ({
   licenses,
   products,
   onRefresh,
-  onNavigateToVerifier,
 }) => {
   const [search, setSearch] = useState('');
   const [selectedProduct, setSelectedProduct] = useState('all');
@@ -644,18 +642,6 @@ export const LicenseList: React.FC<LicenseListProps> = ({
                             <History className="w-4 h-4" />
                           </button>
 
-                          {/* Test in Verifier */}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onNavigateToVerifier(lic.raw_key);
-                            }}
-                            className="p-1.5 text-[#64748b] hover:text-[#10b981] hover:bg-[#f1f5f9] rounded-lg transition cursor-pointer"
-                            title="Doğrulama Sandbox'ında Test Et"
-                          >
-                            <ShieldCheck className="w-4 h-4" />
-                          </button>
-
                           {/* Revoke / Reactivate Status Modal */}
                           <button
                             onClick={(e) =>
@@ -710,7 +696,6 @@ export const LicenseList: React.FC<LicenseListProps> = ({
           isOpen={Boolean(selectedLicenseForManage)}
           onClose={() => setSelectedLicenseForManage(null)}
           onRefresh={onRefresh}
-          onNavigateToVerifier={onNavigateToVerifier}
           onShowToast={showToast}
         />
       )}

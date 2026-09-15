@@ -29,7 +29,6 @@ interface LicenseManageModalProps {
   isOpen: boolean;
   onClose: () => void;
   onRefresh: () => void;
-  onNavigateToVerifier: (key: string) => void;
   onShowToast: (type: 'success' | 'error', message: string) => void;
 }
 
@@ -38,7 +37,6 @@ export const LicenseManageModal: React.FC<LicenseManageModalProps> = ({
   isOpen,
   onClose,
   onRefresh,
-  onNavigateToVerifier,
   onShowToast,
 }) => {
   if (!isOpen || !license) return null;
@@ -383,19 +381,6 @@ export const LicenseManageModal: React.FC<LicenseManageModalProps> = ({
                   </button>
                 )}
 
-                {/* Test in Sandbox Button */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    onNavigateToVerifier(license.raw_key);
-                    onClose();
-                  }}
-                  className="p-3 rounded-xl border border-[#cbd5e1] bg-[#f8fafc] hover:bg-[#f1f5f9] text-[#334155] flex flex-col items-center justify-center text-center transition cursor-pointer group shadow-2xs"
-                >
-                  <ShieldCheck className="w-5 h-5 mb-1.5 text-[#3b82f6] group-hover:scale-110 transition-transform" />
-                  <span className="font-bold text-xs">Doğrula</span>
-                  <span className="text-[10px] text-[#64748b] mt-0.5">Sandbox test</span>
-                </button>
               </div>
 
               {/* License Details Grid */}

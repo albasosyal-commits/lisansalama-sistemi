@@ -3,14 +3,11 @@ import {
   FilePlus2,
   ListOrdered,
   Package,
-  KeyRound,
-  ShieldCheck,
-  Code2,
-  BookOpen,
   RefreshCw,
   Menu,
   X,
   Shield,
+  ShieldCheck,
   Layers,
   Lock,
   Database,
@@ -18,7 +15,7 @@ import {
 } from 'lucide-react';
 import { DashboardStats, KeyMetadata } from '../types';
 
-export type TabType = 'create' | 'list' | 'products' | 'keys' | 'verifier' | 'snippets' | 'firebase' | 'diagnostics' | 'docs';
+export type TabType = 'create' | 'list' | 'products' | 'firebase' | 'diagnostics';
 
 interface NavbarProps {
   activeTab: TabType;
@@ -43,12 +40,8 @@ export const Sidebar: React.FC<NavbarProps> = ({
     { id: 'create' as TabType, label: 'Yeni Lisans Oluştur', icon: FilePlus2, desc: 'RSA-SHA256 İmzala' },
     { id: 'list' as TabType, label: 'Lisans Veritabanı', icon: ListOrdered, desc: 'Kayıtlar & İptal (Revoke)' },
     { id: 'products' as TabType, label: 'Ürün Yönetimi', icon: Package, desc: 'Proje & product_id' },
-    { id: 'keys' as TabType, label: 'RSA Anahtarları', icon: KeyRound, desc: 'Public & Private Key' },
-    { id: 'verifier' as TabType, label: 'Doğrulama Sandbox', icon: ShieldCheck, desc: 'Çevrimdışı & Çevrimiçi' },
-    { id: 'snippets' as TabType, label: 'SDK & Entegrasyon', icon: Code2, desc: 'Python, Node, C#, Go' },
     { id: 'firebase' as TabType, label: 'Firebase & Firestore', icon: Database, desc: 'Bulut Veritabanı Bağlantısı' },
     { id: 'diagnostics' as TabType, label: 'API Tanılama', icon: Activity, desc: 'Servis & Hata Testi' },
-    { id: 'docs' as TabType, label: 'Mimari Dokümanı', icon: BookOpen, desc: 'Kriptografi Kılavuzu' },
   ];
 
   return (
@@ -197,12 +190,8 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
     create: { title: 'Yeni Lisans Oluştur', subtitle: 'RSA-SHA256 dijital imzalı anahtar üretici' },
     list: { title: 'Lisans Veritabanı', subtitle: 'Tüm üretilen lisans kayıtları, arama ve iptal (revoke)' },
     products: { title: 'Ürün Yönetimi', subtitle: 'Yazılım ve proje tanımlamaları (product_id)' },
-    keys: { title: 'RSA-2048 Güvenlik & Anahtarlar', subtitle: 'Public & Private Key asimetrik anahtar çifti' },
-    verifier: { title: 'Lisans Doğrulama Sandbox', subtitle: 'Çevrimdışı (offline) ve çevrimiçi (online) test motoru' },
-    snippets: { title: 'SDK & Entegrasyon Kodları', subtitle: 'Python, Node.js, C#, PHP ve Go doğrulama kodları' },
     firebase: { title: 'Firebase & Firestore Veritabanı', subtitle: 'Bulut Firestore bağlantı durumu, yapılandırma ve koleksiyonlar' },
     diagnostics: { title: 'API Tanılama Merkezi', subtitle: 'Servis sağlık kontrolü, lisans testi ve hata kodu referansı' },
-    docs: { title: 'Mimari Dokümantasyon', subtitle: 'Çalışma prensibi, güvenlik önlemleri ve format özellikleri' },
   };
 
   const current = titles[activeTab] || { title: 'Genel Bakış', subtitle: 'Lisans Yönetim Paneli' };

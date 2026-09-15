@@ -21,14 +21,12 @@ import { api } from '../services/api';
 interface LicenseGeneratorProps {
   products: Product[];
   onLicenseCreated: (license: StoredLicense) => void;
-  onNavigateToVerifier: (key: string) => void;
   onAddProductClick: () => void;
 }
 
 export const LicenseGenerator: React.FC<LicenseGeneratorProps> = ({
   products,
   onLicenseCreated,
-  onNavigateToVerifier,
   onAddProductClick,
 }) => {
   // Form State
@@ -510,21 +508,6 @@ export const LicenseGenerator: React.FC<LicenseGeneratorProps> = ({
                   <span>.lic İndir</span>
                 </button>
               </div>
-            </div>
-
-            {/* Quick Test Sandbox Trigger */}
-            <div className="p-3 bg-[#f8fafc] rounded-lg border border-[#e2e8f0] flex items-center justify-between text-xs">
-              <div className="flex items-center space-x-2 text-[#475569]">
-                <ShieldCheck className="w-4 h-4 text-[#10b981]" />
-                <span>Doğrulamayı test et:</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => onNavigateToVerifier(generatedResult.licenseKey)}
-                className="px-3 py-1.5 bg-[#eff6ff] hover:bg-[#dbeafe] text-[#1d4ed8] font-semibold rounded-lg border border-[#bfdbfe] transition cursor-pointer"
-              >
-                Sandbox'ta Aç &rarr;
-              </button>
             </div>
 
             {/* Decoded Payload Details */}

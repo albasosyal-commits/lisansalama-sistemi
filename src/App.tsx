@@ -4,10 +4,6 @@ import { DashboardStats } from './components/DashboardStats';
 import { LicenseGenerator } from './components/LicenseGenerator';
 import { LicenseList } from './components/LicenseList';
 import { ProductManager } from './components/ProductManager';
-import { KeyManager } from './components/KeyManager';
-import { LicenseVerifierSandbox } from './components/LicenseVerifierSandbox';
-import { CodeSnippetsView } from './components/CodeSnippetsView';
-import { DocumentationView } from './components/DocumentationView';
 import { FirebaseStatusView } from './components/FirebaseStatusView';
 import { ApiDiagnosticsView } from './components/ApiDiagnosticsView';
 
@@ -42,9 +38,6 @@ export default function App() {
   const [keyInfo, setKeyInfo] = useState<KeyMetadata>(DEFAULT_KEY_METADATA);
   const [products, setProducts] = useState<Product[]>([]);
   const [licenses, setLicenses] = useState<StoredLicense[]>([]);
-
-  // State passed to sandbox when user clicks "Sandbox'ta Test Et"
-  const [sandboxLicenseKey, setSandboxLicenseKey] = useState<string>('');
 
   // Track if initial load is done (to not block live listener)
   const initialLoadDone = useRef(false);
@@ -137,12 +130,6 @@ export default function App() {
   }, []);
 
 
-  // Navigate to Sandbox with a specific license key
-  const handleNavigateToVerifier = (key: string) => {
-    setSandboxLicenseKey(key);
-    setActiveTab('verifier');
-  };
-
   // Trigger when a new license is generated
   const handleLicenseCreated = (newLic: StoredLicense) => {
     setLicenses((prev) => [newLic, ...prev]);
@@ -217,7 +204,6 @@ export default function App() {
                 <LicenseGenerator
                   products={products}
                   onLicenseCreated={handleLicenseCreated}
-                  onNavigateToVerifier={handleNavigateToVerifier}
                   onAddProductClick={() => setActiveTab('products')}
                 />
               )}
@@ -227,7 +213,6 @@ export default function App() {
                   licenses={licenses}
                   products={products}
                   onRefresh={() => loadAllData(true)}
-                  onNavigateToVerifier={handleNavigateToVerifier}
                 />
               )}
 
@@ -239,26 +224,9 @@ export default function App() {
                 />
               )}
 
-              {activeTab === 'keys' && (
-                <KeyManager keyInfo={keyInfo} onRefresh={() => loadAllData(true)} />
-              )}
-
-              {activeTab === 'verifier' && (
-                <LicenseVerifierSandbox
-                  initialLicenseKey={sandboxLicenseKey}
-                  keyInfo={keyInfo}
-                />
-              )}
-
-              {activeTab === 'snippets' && (
-                <CodeSnippetsView keyInfo={keyInfo} products={products} />
-              )}
-
               {activeTab === 'firebase' && <FirebaseStatusView />}
 
               {activeTab === 'diagnostics' && <ApiDiagnosticsView />}
-
-              {activeTab === 'docs' && <DocumentationView />}
             </div>
           )}
         </main>
