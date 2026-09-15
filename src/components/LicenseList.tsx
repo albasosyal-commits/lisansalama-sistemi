@@ -106,8 +106,17 @@ export const LicenseList: React.FC<LicenseListProps> = ({
     };
   };
 
-  // Usage calculation helper (Kullanımda vs Kullanımda Değil)
+  // Usage calculation helper (Kullanımda vs Kullanımda Değil vs Silindi)
   const getUsageStatus = (license: StoredLicense) => {
+    if (license.removed_from_app) {
+      return {
+        isUsed: false,
+        label: 'Lisans Silindi',
+        subLabel: 'İstemci uygulamadan kaldırıldı',
+        color: 'bg-rose-50 text-rose-700 border border-rose-200',
+        dotColor: 'bg-rose-500',
+      };
+    }
     if (license.is_used) {
       return {
         isUsed: true,
@@ -532,7 +541,9 @@ export const LicenseList: React.FC<LicenseListProps> = ({
                           <span
                             className={`inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold w-fit ${usage.color}`}
                             title={
-                              lic.is_used
+                              lic.removed_from_app
+                                ? `Kullanıcı bu lisansı istemci uygulamadan kaldırdı.\nKaldırılma Tarihi: ${lic.removed_from_app_at ? new Date(lic.removed_from_app_at).toLocaleString('tr-TR') : 'Belirtilmedi'}`
+                                : lic.is_used
                                 ? `Uygulama Girişi Yapıldı\nİlk Giriş: ${lic.first_used_at ? new Date(lic.first_used_at).toLocaleString('tr-TR') : 'Belirtilmedi'}\nSon Giriş: ${lic.last_used_at ? new Date(lic.last_used_at).toLocaleString('tr-TR') : 'Belirtilmedi'}\nToplam Oturum: ${lic.usage_count || 1} kez\nCihaz: ${lic.last_machine_id || lic.machine_id || 'Standart'}`
                                 : 'Lisans oluşturuldu, ancak uygulama tarafından henüz giriş yapılmadı veya doğrulanmadı.'
                             }

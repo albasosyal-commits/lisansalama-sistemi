@@ -59,7 +59,8 @@ export interface LicenseActivityLog {
     | 'reactivated'
     | 'activated'
     | 'used'
-    | 'reset_usage';
+    | 'reset_usage'
+    | 'removed_from_app';
   description: string;
   details?: Record<string, any>;
 }
@@ -98,6 +99,8 @@ export interface StoredLicense {
   usage_count?: number;
   last_machine_id?: string | null;
   app_version?: string | null;
+  removed_from_app?: boolean;
+  removed_from_app_at?: string | null;
 }
 
 // AES-256-GCM Encryption
@@ -526,6 +529,9 @@ export async function recordLicenseUsage(
     usage_count: fields.usage_count,
     last_used_at: fields.last_used_at,
     logs: arrayUnion(logEntry),
+    // Lisans tekrar bir istemci uygulamada dogrulandiginda (ör. yeniden yapistirildiginda)
+    // "uygulamadan silindi" uyarisi kalkar.
+    removed_from_app: false,
   };
   if (fields.first_used_at) updateData.first_used_at = fields.first_used_at;
   if (fields.last_machine_id !== undefined && fields.last_machine_id !== null) {
@@ -549,6 +555,42 @@ export async function recordLicenseUsage(
         first_used_at: fields.first_used_at || cachedLicenses[idx].first_used_at,
         last_machine_id: fields.last_machine_id ?? cachedLicenses[idx].last_machine_id,
         app_version: fields.app_version ?? cachedLicenses[idx].app_version,
+        removed_from_app: false,
+        logs: [...(cachedLicenses[idx].logs || []), logEntry],
+      };
+    }
+  }
+}
+
+/**
+ * İstemci uygulama (democlub vb.) kullanıcısı "Lisansı Sil" dediğinde çağrılır.
+ * Lisansı Lisansama veritabanından SİLMEZ — sadece "bu lisans bir istemci
+ * uygulamadan kaldırıldı" bilgisini işaretler ki yönetici panelinde Kullanım
+ * Durumu alanında bir uyarı görünsün. status/paused_at/revoked_at alanlarına
+ * dokunmaz (recordLicenseUsage ile aynı hedefli güncelleme deseni).
+ */
+export async function markLicenseRemovedFromApp(
+  licenseId: string,
+  logEntry: LicenseActivityLog
+): Promise<void> {
+  const db = getFirestoreDb();
+  const docRef = doc(db, COLLECTIONS.LICENSES, licenseId);
+
+  await updateDoc(docRef, {
+    is_used: false,
+    removed_from_app: true,
+    removed_from_app_at: logEntry.timestamp,
+    logs: arrayUnion(logEntry),
+  });
+
+  if (cachedLicenses) {
+    const idx = cachedLicenses.findIndex((l) => l.license_id === licenseId);
+    if (idx >= 0) {
+      cachedLicenses[idx] = {
+        ...cachedLicenses[idx],
+        is_used: false,
+        removed_from_app: true,
+        removed_from_app_at: logEntry.timestamp,
         logs: [...(cachedLicenses[idx].logs || []), logEntry],
       };
     }
@@ -578,7 +620,8 @@ export function addLicenseLog(
     | 'reactivated'
     | 'activated'
     | 'used'
-    | 'reset_usage',
+    | 'reset_usage'
+    | 'removed_from_app',
   description: string,
   details?: Record<string, any>
 ) {

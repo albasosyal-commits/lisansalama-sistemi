@@ -689,12 +689,25 @@ async function startServer() {
             timestamp: nowIso,
           }
         );
+      } else if (action === "mark_removed") {
+        lic.is_used = false;
+        lic.removed_from_app = true;
+        lic.removed_from_app_at = nowIso;
+
+        addLicenseLog(
+          lic,
+          "removed_from_app",
+          `Lisans, istemci uygulamadan (kullanıcı tarafından "Lisansı Sil" ile) kaldırıldı.`,
+          { machine_id: machine_id || null, timestamp: nowIso }
+        );
       } else if (action === "reset_usage") {
         lic.is_used = false;
         lic.usage_count = 0;
         lic.first_used_at = null;
         lic.last_used_at = null;
         lic.last_machine_id = null;
+        lic.removed_from_app = false;
+        lic.removed_from_app_at = null;
 
         addLicenseLog(
           lic,
@@ -705,7 +718,7 @@ async function startServer() {
       } else {
         return res.status(400).json({
           success: false,
-          message: "Geçersiz işlem ('mark_used' veya 'reset_usage' bekleniyor).",
+          message: "Geçersiz işlem ('mark_used', 'mark_removed' veya 'reset_usage' bekleniyor).",
         });
       }
 
@@ -716,6 +729,8 @@ async function startServer() {
         message:
           action === "mark_used"
             ? "Lisans 'Kullanımda' (Uygulama Girişi Yapıldı) olarak güncellendi."
+            : action === "mark_removed"
+            ? "Lisansın istemci uygulamadan kaldırıldığı işaretlendi."
             : "Lisans kullanım durumu sıfırlandı ('Kullanımda Değil').",
       });
     } catch (e: any) {

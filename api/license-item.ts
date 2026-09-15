@@ -4,6 +4,7 @@ import {
   getLicenseById,
   saveLicense,
   recordLicenseUsage,
+  markLicenseRemovedFromApp,
   deleteLicense,
   addLicenseLog,
   signLicensePayload,
@@ -244,12 +245,37 @@ export default async function handler(
           })
         );
         return;
+      } else if (usageAction === 'mark_removed') {
+        // İstemci uygulama kullanıcısı lisansı uygulamadan sildiğinde çağrılır.
+        await markLicenseRemovedFromApp(lic.license_id, {
+          id: 'log-' + crypto.randomUUID(),
+          timestamp: nowIso,
+          action: 'removed_from_app',
+          description: 'Lisans, istemci uygulamadan (kullanıcı tarafından "Lisansı Sil" ile) kaldırıldı.',
+          details: { machine_id: machine_id || null, timestamp: nowIso },
+        });
+
+        lic.is_used = false;
+        lic.removed_from_app = true;
+        lic.removed_from_app_at = nowIso;
+
+        res.statusCode = 200;
+        res.end(
+          JSON.stringify({
+            success: true,
+            data: lic,
+            message: 'Lisansın istemci uygulamadan kaldırıldığı işaretlendi.',
+          })
+        );
+        return;
       } else if (usageAction === 'reset_usage') {
         lic.is_used = false;
         lic.usage_count = 0;
         lic.first_used_at = null;
         lic.last_used_at = null;
         lic.last_machine_id = null;
+        lic.removed_from_app = false;
+        lic.removed_from_app_at = null;
         addLicenseLog(
           lic,
           'reset_usage',
@@ -259,7 +285,10 @@ export default async function handler(
       } else {
         res.statusCode = 400;
         res.end(
-          JSON.stringify({ success: false, message: "Geçersiz işlem ('mark_used' veya 'reset_usage' bekleniyor)." })
+          JSON.stringify({
+            success: false,
+            message: "Geçersiz işlem ('mark_used', 'mark_removed' veya 'reset_usage' bekleniyor).",
+          })
         );
         return;
       }

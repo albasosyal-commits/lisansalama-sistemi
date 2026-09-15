@@ -480,7 +480,9 @@ export const LicenseManageModal: React.FC<LicenseManageModalProps> = ({
               {/* Application Usage & Login Information Card */}
               <div
                 className={`border rounded-xl p-4 space-y-3 transition-colors ${
-                  license.is_used
+                  license.removed_from_app
+                    ? 'bg-rose-50/50 border-rose-200'
+                    : license.is_used
                     ? 'bg-emerald-50/50 border-emerald-200'
                     : 'bg-slate-50 border-slate-200'
                 }`}
@@ -489,7 +491,11 @@ export const LicenseManageModal: React.FC<LicenseManageModalProps> = ({
                   <div className="flex items-center space-x-2">
                     <span
                       className={`w-2.5 h-2.5 rounded-full ${
-                        license.is_used ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'
+                        license.removed_from_app
+                          ? 'bg-rose-500'
+                          : license.is_used
+                          ? 'bg-emerald-500 animate-pulse'
+                          : 'bg-slate-400'
                       }`}
                     />
                     <h4 className="text-xs font-bold text-[#1e293b] uppercase tracking-wider">
@@ -498,16 +504,33 @@ export const LicenseManageModal: React.FC<LicenseManageModalProps> = ({
                   </div>
                   <span
                     className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                      license.is_used
+                      license.removed_from_app
+                        ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                        : license.is_used
                         ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
                         : 'bg-slate-200 text-slate-700 border border-slate-300'
                     }`}
                   >
-                    {license.is_used ? '● Kullanımda (Giriş Yapıldı)' : '○ Kullanımda Değil (Beklemede)'}
+                    {license.removed_from_app
+                      ? '⚠ Lisans Silindi'
+                      : license.is_used
+                      ? '● Kullanımda (Giriş Yapıldı)'
+                      : '○ Kullanımda Değil (Beklemede)'}
                   </span>
                 </div>
 
-                {license.is_used ? (
+                {license.removed_from_app ? (
+                  <p className="text-xs text-rose-700 leading-relaxed bg-white p-3 rounded-lg border border-rose-200">
+                    Kullanıcı bu lisansı <strong>istemci uygulamadan kaldırdı</strong> ("Lisansı Sil" işlemi).
+                    Kaldırılma Tarihi:{' '}
+                    <span className="font-mono">
+                      {license.removed_from_app_at
+                        ? new Date(license.removed_from_app_at).toLocaleString('tr-TR')
+                        : 'Belirtilmedi'}
+                    </span>
+                    . Uygulama lisans anahtarıyla tekrar doğrulama yaparsa bu uyarı otomatik olarak kalkacaktır.
+                  </p>
+                ) : license.is_used ? (
                   <div className="space-y-2.5">
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
                       <div className="bg-white p-2.5 rounded-lg border border-emerald-100">

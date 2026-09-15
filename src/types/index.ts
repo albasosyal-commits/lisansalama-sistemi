@@ -4,7 +4,7 @@ export type LicenseStatus = 'active' | 'revoked' | 'paused' | 'expired';
 export interface LicenseActivityLog {
   id: string;
   timestamp: string;
-  action: 'created' | 'extended' | 'paused' | 'unpaused' | 'revoked' | 'reactivated' | 'activated' | 'used' | 'reset_usage';
+  action: 'created' | 'extended' | 'paused' | 'unpaused' | 'revoked' | 'reactivated' | 'activated' | 'used' | 'reset_usage' | 'removed_from_app';
   description: string;
   details?: Record<string, any>;
 }
@@ -55,6 +55,8 @@ export interface StoredLicense {
   usage_count?: number;
   last_machine_id?: string | null;
   app_version?: string | null;
+  removed_from_app?: boolean;
+  removed_from_app_at?: string | null;
 }
 
 export interface DashboardStats {
