@@ -1,5 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'http';
-import { getLicenseById, saveLicense, addLicenseLog, verifyLicenseKeyString } from '../../server/firebaseAdmin.js';
+import { getLicenseById, recordLicenseUsage, verifyLicenseKeyString } from '../../server/firebaseAdmin.js';
+import crypto from 'crypto';
 
 export default async function handler(req: IncomingMessage & { body?: any }, res: ServerResponse) {
   res.setHeader('Content-Type', 'application/json');
@@ -148,35 +149,45 @@ export default async function handler(req: IncomingMessage & { body?: any }, res
 
     if (stored) {
       const wasUsed = stored.is_used;
-      stored.is_used = true;
-      stored.usage_count = (stored.usage_count || 0) + 1;
+      const newUsageCount = (stored.usage_count || 0) + 1;
       const nowIso = new Date().toISOString();
-      if (!stored.first_used_at) {
-        stored.first_used_at = nowIso;
-      }
-      stored.last_used_at = nowIso;
-      if (machine_id) {
-        stored.last_machine_id = machine_id;
-      }
-      if (app_version) {
-        stored.app_version = app_version;
-      }
+      const newFirstUsedAt = stored.first_used_at || nowIso;
 
-      addLicenseLog(
-        stored,
-        wasUsed ? 'used' : 'activated',
-        wasUsed
-          ? `Uygulama lisans ile tekrar doğrulandı/oturum açtı (Toplam: ${stored.usage_count}. oturum).`
-          : 'Uygulama ilk kez bu lisans ile başarıyla giriş yaptı (Durum: "Kullanımda").',
+      // ÖNEMLİ: saveLicense(stored) ile TÜM lisans nesnesini (status, paused_at,
+      // revoked_at dahil) geri YAZMA — bu, tam bu sırada bir yönetici tarafından
+      // yapılan iptal/dondurma işlemini ezebilir (yarış durumu). Sadece kullanım
+      // alanlarını hedefli şekilde güncelle.
+      await recordLicenseUsage(
+        stored.license_id,
         {
-          machine_id: machine_id || null,
-          app_version: app_version || null,
-          first_used_at: stored.first_used_at,
-          last_used_at: stored.last_used_at,
-          usage_count: stored.usage_count,
+          is_used: true,
+          usage_count: newUsageCount,
+          first_used_at: newFirstUsedAt,
+          last_used_at: nowIso,
+          last_machine_id: machine_id || undefined,
+          app_version: app_version || undefined,
+        },
+        {
+          id: 'log-' + crypto.randomUUID(),
+          timestamp: nowIso,
+          action: wasUsed ? 'used' : 'activated',
+          description: wasUsed
+            ? `Uygulama lisans ile tekrar doğrulandı/oturum açtı (Toplam: ${newUsageCount}. oturum).`
+            : 'Uygulama ilk kez bu lisans ile başarıyla giriş yaptı (Durum: "Kullanımda").',
+          details: {
+            machine_id: machine_id || null,
+            app_version: app_version || null,
+            first_used_at: newFirstUsedAt,
+            last_used_at: nowIso,
+            usage_count: newUsageCount,
+          },
         }
       );
-      await saveLicense(stored);
+
+      stored.is_used = true;
+      stored.usage_count = newUsageCount;
+      stored.first_used_at = newFirstUsedAt;
+      stored.last_used_at = nowIso;
     }
 
     res.statusCode = 200;

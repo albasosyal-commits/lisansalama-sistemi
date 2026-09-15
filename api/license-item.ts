@@ -1,7 +1,9 @@
 import type { IncomingMessage, ServerResponse } from 'http';
+import crypto from 'crypto';
 import {
   getLicenseById,
   saveLicense,
+  recordLicenseUsage,
   deleteLicense,
   addLicenseLog,
   signLicensePayload,
@@ -201,21 +203,47 @@ export default async function handler(
       const nowIso = new Date().toISOString();
       if (usageAction === 'mark_used') {
         const wasUsed = lic.is_used;
+        const newUsageCount = (lic.usage_count || 0) + 1;
+        const newFirstUsedAt = lic.first_used_at || nowIso;
+
+        // Hedefli guncelleme - saveLicense(lic) ile tum nesneyi (status dahil) geri yazmaz.
+        await recordLicenseUsage(
+          lic.license_id,
+          {
+            is_used: true,
+            usage_count: newUsageCount,
+            first_used_at: newFirstUsedAt,
+            last_used_at: nowIso,
+            last_machine_id: machine_id || undefined,
+            app_version: app_version || undefined,
+          },
+          {
+            id: 'log-' + crypto.randomUUID(),
+            timestamp: nowIso,
+            action: 'activated',
+            description: wasUsed
+              ? `Uygulama lisans ile tekrar doğrulandı/giriş yaptı (Toplam ${newUsageCount}. kez).`
+              : 'Uygulama lisans ile ilk kez başarıyla giriş yaptı (Durum: Kullanımda).',
+            details: { machine_id: machine_id || null, app_version: app_version || null, timestamp: nowIso },
+          }
+        );
+
         lic.is_used = true;
-        lic.usage_count = (lic.usage_count || 0) + 1;
-        if (!lic.first_used_at) lic.first_used_at = nowIso;
+        lic.usage_count = newUsageCount;
+        lic.first_used_at = newFirstUsedAt;
         lic.last_used_at = nowIso;
         if (machine_id) lic.last_machine_id = machine_id;
         if (app_version) lic.app_version = app_version;
 
-        addLicenseLog(
-          lic,
-          'activated',
-          wasUsed
-            ? `Uygulama lisans ile tekrar doğrulandı/giriş yaptı (Toplam ${lic.usage_count}. kez).`
-            : 'Uygulama lisans ile ilk kez başarıyla giriş yaptı (Durum: Kullanımda).',
-          { machine_id: machine_id || null, app_version: app_version || null, timestamp: nowIso }
+        res.statusCode = 200;
+        res.end(
+          JSON.stringify({
+            success: true,
+            data: lic,
+            message: "Lisans 'Kullanımda' (Uygulama Girişi Yapıldı) olarak güncellendi.",
+          })
         );
+        return;
       } else if (usageAction === 'reset_usage') {
         lic.is_used = false;
         lic.usage_count = 0;
@@ -236,16 +264,14 @@ export default async function handler(
         return;
       }
 
+      // Buraya sadece 'reset_usage' dalı ulaşır (mark_used yukarıda erken donuyor).
       await saveLicense(lic);
       res.statusCode = 200;
       res.end(
         JSON.stringify({
           success: true,
           data: lic,
-          message:
-            usageAction === 'mark_used'
-              ? "Lisans 'Kullanımda' (Uygulama Girişi Yapıldı) olarak güncellendi."
-              : "Lisans kullanım durumu sıfırlandı ('Kullanımda Değil').",
+          message: "Lisans kullanım durumu sıfırlandı ('Kullanımda Değil').",
         })
       );
       return;

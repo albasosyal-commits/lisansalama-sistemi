@@ -5,6 +5,8 @@ import {
   doc,
   getDoc,
   setDoc,
+  updateDoc,
+  arrayUnion,
   getDocs,
   deleteDoc,
   writeBatch,
@@ -424,31 +426,38 @@ export async function getLicenses(): Promise<StoredLicense[]> {
 }
 
 export async function getLicenseById(licenseId: string): Promise<StoredLicense | null> {
-  // 1. Check in-memory cache first — avoids slow Firestore round-trip
-  if (cachedLicenses) {
-    const cached = cachedLicenses.find((l) => l.license_id === licenseId);
-    if (cached) return cached;
-  }
-
-  // 2. Fall back to Firestore only if not cached
+  // ÖNEMLİ: Bellek-içi cache'i ÖNCELİKLİ okuma kaynağı olarak KULLANMA.
+  // Vercel serverless fonksiyonları eşzamanlı (concurrent) istekleri aynı
+  // sıcak instance üzerinde işleyebilir; cache-first bir okuma + tüm nesneyi
+  // geri yazan bir saveLicense çağrısı ("read-modify-write") bir araya
+  // gelince yarış durumu (race condition) oluşur: örneğin bir istek
+  // pause/revoke öncesi eski durumu cache'den okur, pause işlemi Firestore'a
+  // yazıldıktan SONRA bile eski nesneyi geri yazarak status alanını
+  // sessizce eski haline döndürebilir. Bu gerçekten yaşandı (bkz. bir
+  // lisansın hem status:"active" hem paused_at dolu şekilde bulunması).
+  // Bu yüzden her çağrı Firestore'dan TAZE okur; cache sadece Firestore'a
+  // hiç ulaşılamadığında (network hatası) son çare olarak kullanılır.
   try {
     const db = getFirestoreDb();
     const docRef = doc(db, COLLECTIONS.LICENSES, licenseId);
     const snap = await getDoc(docRef);
     if (snap.exists()) {
       const lic = snap.data() as StoredLicense;
-      // Populate cache entry
       if (!cachedLicenses) cachedLicenses = [];
       const idx = cachedLicenses.findIndex((l) => l.license_id === licenseId);
       if (idx >= 0) cachedLicenses[idx] = lic;
       else cachedLicenses.unshift(lic);
       return lic;
     }
+    return null;
   } catch (err) {
-    console.warn("Firestore getLicenseById error:", err);
+    console.warn("Firestore getLicenseById error, cache'e (varsa) düşülüyor:", err);
+    if (cachedLicenses) {
+      const cached = cachedLicenses.find((l) => l.license_id === licenseId);
+      if (cached) return cached;
+    }
+    return null;
   }
-
-  return null;
 }
 
 export async function saveLicense(license: StoredLicense): Promise<void> {
@@ -474,6 +483,66 @@ export async function saveLicense(license: StoredLicense): Promise<void> {
   } catch (err) {
     console.error("Firestore saveLicense write error:", err);
     throw err;
+  }
+}
+
+/**
+ * Sadece kullanım/telemetri alanlarını (is_used, usage_count, last_used_at, vb.)
+ * hedefli şekilde (Firestore updateDoc ile) günceller — saveLicense'daki gibi
+ * lisansın TAMAMINI (status, paused_at, revoked_at dahil) geri yazmaz.
+ *
+ * Bu, doğrulama (verify) isteklerinin (her uygulama açılışında/oturumda tetiklenir,
+ * çok sık ve eşzamanlı olabilir) bir yönetici tarafından AYNI ANDA yapılan
+ * iptal/dondurma işlemini ezmesini önler: bir doğrulama isteği biraz eski bir
+ * lisans nesnesi okumuş olsa bile, sadece kendi ilgilendiği alanları yazdığı
+ * için status/paused_at/revoked_at alanlarına asla dokunmaz.
+ */
+export async function recordLicenseUsage(
+  licenseId: string,
+  fields: {
+    is_used: boolean;
+    usage_count: number;
+    first_used_at: string | null;
+    last_used_at: string | null;
+    last_machine_id?: string | null;
+    app_version?: string | null;
+  },
+  logEntry: LicenseActivityLog
+): Promise<void> {
+  const db = getFirestoreDb();
+  const docRef = doc(db, COLLECTIONS.LICENSES, licenseId);
+
+  const updateData: Record<string, any> = {
+    is_used: fields.is_used,
+    usage_count: fields.usage_count,
+    last_used_at: fields.last_used_at,
+    logs: arrayUnion(logEntry),
+  };
+  if (fields.first_used_at) updateData.first_used_at = fields.first_used_at;
+  if (fields.last_machine_id !== undefined && fields.last_machine_id !== null) {
+    updateData.last_machine_id = fields.last_machine_id;
+  }
+  if (fields.app_version !== undefined && fields.app_version !== null) {
+    updateData.app_version = fields.app_version;
+  }
+
+  await updateDoc(docRef, updateData);
+
+  // Cache'i de (best-effort) güncel tut
+  if (cachedLicenses) {
+    const idx = cachedLicenses.findIndex((l) => l.license_id === licenseId);
+    if (idx >= 0) {
+      cachedLicenses[idx] = {
+        ...cachedLicenses[idx],
+        is_used: fields.is_used,
+        usage_count: fields.usage_count,
+        last_used_at: fields.last_used_at,
+        first_used_at: fields.first_used_at || cachedLicenses[idx].first_used_at,
+        last_machine_id: fields.last_machine_id ?? cachedLicenses[idx].last_machine_id,
+        app_version: fields.app_version ?? cachedLicenses[idx].app_version,
+        logs: [...(cachedLicenses[idx].logs || []), logEntry],
+      };
+    }
   }
 }
 

@@ -1,5 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'http';
-import { getLicenseById, saveLicense, addLicenseLog, verifyLicenseKeyString } from '../server/firebaseAdmin.js';
+import { getLicenseById, recordLicenseUsage, verifyLicenseKeyString } from '../server/firebaseAdmin.js';
+import crypto from 'crypto';
 
 export default async function handler(req: IncomingMessage & { body?: any }, res: ServerResponse) {
   res.setHeader('Content-Type', 'application/json');
@@ -49,22 +50,35 @@ export default async function handler(req: IncomingMessage & { body?: any }, res
       const stored = await getLicenseById(result.payload.license_id);
       if (stored && track_usage) {
         const wasUsed = stored.is_used;
-        stored.is_used = true;
-        stored.usage_count = (stored.usage_count || 0) + 1;
+        const newUsageCount = (stored.usage_count || 0) + 1;
         const nowIso = new Date().toISOString();
-        if (!stored.first_used_at) stored.first_used_at = nowIso;
-        stored.last_used_at = nowIso;
-        if (target_machine_id) stored.last_machine_id = target_machine_id;
+        const newFirstUsedAt = stored.first_used_at || nowIso;
 
-        addLicenseLog(
-          stored,
-          wasUsed ? 'used' : 'activated',
-          wasUsed
-            ? `Sandbox testi: Lisans doğrulandı (Toplam ${stored.usage_count}. oturum).`
-            : 'Sandbox testi: Lisans ile ilk kez giriş yapıldı (Durum: Kullanımda).',
-          { machine_id: target_machine_id || null, sandbox: true }
+        // saveLicense yerine hedefli guncelleme - status/paused_at/revoked_at'i ezmez.
+        await recordLicenseUsage(
+          stored.license_id,
+          {
+            is_used: true,
+            usage_count: newUsageCount,
+            first_used_at: newFirstUsedAt,
+            last_used_at: nowIso,
+            last_machine_id: target_machine_id || undefined,
+          },
+          {
+            id: 'log-' + crypto.randomUUID(),
+            timestamp: nowIso,
+            action: wasUsed ? 'used' : 'activated',
+            description: wasUsed
+              ? `Sandbox testi: Lisans doğrulandı (Toplam ${newUsageCount}. oturum).`
+              : 'Sandbox testi: Lisans ile ilk kez giriş yapıldı (Durum: Kullanımda).',
+            details: { machine_id: target_machine_id || null, sandbox: true },
+          }
         );
-        await saveLicense(stored);
+
+        stored.is_used = true;
+        stored.usage_count = newUsageCount;
+        stored.first_used_at = newFirstUsedAt;
+        stored.last_used_at = nowIso;
       }
       if (stored) {
         licenseUsageInfo = {
