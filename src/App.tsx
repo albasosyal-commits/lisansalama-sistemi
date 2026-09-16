@@ -6,6 +6,8 @@ import { LicenseList } from './components/LicenseList';
 import { ProductManager } from './components/ProductManager';
 import { FirebaseStatusView } from './components/FirebaseStatusView';
 import { ApiDiagnosticsView } from './components/ApiDiagnosticsView';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { LoginScreen } from './components/auth/LoginScreen';
 
 import {
   DashboardStats as StatsType,
@@ -19,7 +21,7 @@ import { AlertCircle, RefreshCw } from 'lucide-react';
 import { db } from './firebase';
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 
-export default function App() {
+function Dashboard() {
   const [activeTab, setActiveTab] = useState<TabType>('create');
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -232,5 +234,18 @@ export default function App() {
         </main>
       </div>
     </div>
+  );
+}
+
+function AuthGate() {
+  const { isAuthenticated } = useAuth();
+  return isAuthenticated ? <Dashboard /> : <LoginScreen />;
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AuthGate />
+    </AuthProvider>
   );
 }

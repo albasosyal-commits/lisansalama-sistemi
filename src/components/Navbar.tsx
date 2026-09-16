@@ -12,8 +12,14 @@ import {
   Lock,
   Database,
   Activity,
+  User,
+  KeyRound,
+  LogOut,
+  ChevronDown,
 } from 'lucide-react';
 import { DashboardStats, KeyMetadata } from '../types';
+import { useAuth } from '../contexts/AuthContext';
+import { ChangePasswordModal } from './auth/ChangePasswordModal';
 
 export type TabType = 'create' | 'list' | 'products' | 'firebase' | 'diagnostics';
 
@@ -186,6 +192,10 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   loading,
   onRefresh,
 }) => {
+  const { username, logout } = useAuth();
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+
   const titles: Record<TabType, { title: string; subtitle: string }> = {
     create: { title: 'Yeni Lisans Oluştur', subtitle: 'RSA-SHA256 dijital imzalı anahtar üretici' },
     list: { title: 'Lisans Veritabanı', subtitle: 'Tüm üretilen lisans kayıtları, arama ve iptal (revoke)' },
@@ -241,7 +251,51 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
         >
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-[#3b82f6]' : ''}`} />
         </button>
+
+        {/* Kullanıcı Menüsü */}
+        <div className="relative">
+          <button
+            onClick={() => setUserMenuOpen((v) => !v)}
+            className="flex items-center gap-1.5 pl-2 pr-2.5 py-2 rounded-lg bg-[#f8fafc] hover:bg-[#f1f5f9] text-[#334155] border border-[#cbd5e1] transition cursor-pointer"
+          >
+            <div className="w-6 h-6 rounded-full bg-[#2563eb] text-white flex items-center justify-center">
+              <User size={13} />
+            </div>
+            <span className="text-xs font-bold hidden sm:inline">{username}</span>
+            <ChevronDown size={14} className="text-[#94a3b8]" />
+          </button>
+
+          {userMenuOpen && (
+            <>
+              <div className="fixed inset-0 z-30" onClick={() => setUserMenuOpen(false)} />
+              <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-xl shadow-lg border border-[#e2e8f0] overflow-hidden z-40 animate-in fade-in zoom-in-95 duration-150">
+                <button
+                  onClick={() => {
+                    setChangePasswordOpen(true);
+                    setUserMenuOpen(false);
+                  }}
+                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-[#334155] hover:bg-[#f8fafc] transition-colors cursor-pointer"
+                >
+                  <KeyRound size={14} className="text-[#64748b]" />
+                  <span>Şifre Değiştir</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setUserMenuOpen(false);
+                    logout();
+                  }}
+                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-[#dc2626] hover:bg-[#fee2e2] transition-colors cursor-pointer border-t border-[#e2e8f0]"
+                >
+                  <LogOut size={14} />
+                  <span>Çıkış Yap</span>
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
+
+      {changePasswordOpen && <ChangePasswordModal onClose={() => setChangePasswordOpen(false)} />}
     </header>
   );
 };
