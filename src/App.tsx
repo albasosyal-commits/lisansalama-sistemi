@@ -8,6 +8,7 @@ import { FirebaseStatusView } from './components/FirebaseStatusView';
 import { ApiDiagnosticsView } from './components/ApiDiagnosticsView';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LoginScreen } from './components/auth/LoginScreen';
+import { AccountSettingsView } from './components/AccountSettingsView';
 
 import {
   DashboardStats as StatsType,
@@ -166,6 +167,7 @@ function Dashboard() {
         {/* Top Header Bar */}
         <HeaderBar
           activeTab={activeTab}
+          setActiveTab={setActiveTab}
           stats={stats}
           loading={loading}
           onRefresh={() => loadAllData(false)}
@@ -229,6 +231,8 @@ function Dashboard() {
               {activeTab === 'firebase' && <FirebaseStatusView />}
 
               {activeTab === 'diagnostics' && <ApiDiagnosticsView />}
+
+              {activeTab === 'account' && <AccountSettingsView />}
             </div>
           )}
         </main>

@@ -19,9 +19,8 @@ import {
 } from 'lucide-react';
 import { DashboardStats, KeyMetadata } from '../types';
 import { useAuth } from '../contexts/AuthContext';
-import { ChangePasswordModal } from './auth/ChangePasswordModal';
 
-export type TabType = 'create' | 'list' | 'products' | 'firebase' | 'diagnostics';
+export type TabType = 'create' | 'list' | 'products' | 'firebase' | 'diagnostics' | 'account';
 
 interface NavbarProps {
   activeTab: TabType;
@@ -48,6 +47,7 @@ export const Sidebar: React.FC<NavbarProps> = ({
     { id: 'products' as TabType, label: 'Ürün Yönetimi', icon: Package, desc: 'Proje & product_id' },
     { id: 'firebase' as TabType, label: 'Firebase & Firestore', icon: Database, desc: 'Bulut Veritabanı Bağlantısı' },
     { id: 'diagnostics' as TabType, label: 'API Tanılama', icon: Activity, desc: 'Servis & Hata Testi' },
+    { id: 'account' as TabType, label: 'Hesap Ayarları', icon: User, desc: 'Kullanıcı Adı & Şifre' },
   ];
 
   return (
@@ -181,6 +181,7 @@ export const Sidebar: React.FC<NavbarProps> = ({
 // Top Header Component (Geometric Balance)
 interface HeaderBarProps {
   activeTab: TabType;
+  setActiveTab: (tab: TabType) => void;
   stats: DashboardStats | null;
   loading: boolean;
   onRefresh: () => void;
@@ -188,13 +189,13 @@ interface HeaderBarProps {
 
 export const HeaderBar: React.FC<HeaderBarProps> = ({
   activeTab,
+  setActiveTab,
   stats,
   loading,
   onRefresh,
 }) => {
   const { username, logout } = useAuth();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
 
   const titles: Record<TabType, { title: string; subtitle: string }> = {
     create: { title: 'Yeni Lisans Oluştur', subtitle: 'RSA-SHA256 dijital imzalı anahtar üretici' },
@@ -202,6 +203,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
     products: { title: 'Ürün Yönetimi', subtitle: 'Yazılım ve proje tanımlamaları (product_id)' },
     firebase: { title: 'Firebase & Firestore Veritabanı', subtitle: 'Bulut Firestore bağlantı durumu, yapılandırma ve koleksiyonlar' },
     diagnostics: { title: 'API Tanılama Merkezi', subtitle: 'Servis sağlık kontrolü, lisans testi ve hata kodu referansı' },
+    account: { title: 'Hesap Ayarları', subtitle: 'Kullanıcı adı ve şifre yönetimi' },
   };
 
   const current = titles[activeTab] || { title: 'Genel Bakış', subtitle: 'Lisans Yönetim Paneli' };
@@ -271,13 +273,13 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
               <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-xl shadow-lg border border-[#e2e8f0] overflow-hidden z-40 animate-in fade-in zoom-in-95 duration-150">
                 <button
                   onClick={() => {
-                    setChangePasswordOpen(true);
+                    setActiveTab('account');
                     setUserMenuOpen(false);
                   }}
                   className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-[#334155] hover:bg-[#f8fafc] transition-colors cursor-pointer"
                 >
                   <KeyRound size={14} className="text-[#64748b]" />
-                  <span>Şifre Değiştir</span>
+                  <span>Hesap Ayarları</span>
                 </button>
                 <button
                   onClick={() => {
@@ -294,8 +296,6 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
           )}
         </div>
       </div>
-
-      {changePasswordOpen && <ChangePasswordModal onClose={() => setChangePasswordOpen(false)} />}
     </header>
   );
 };
