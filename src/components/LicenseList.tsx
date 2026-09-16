@@ -133,6 +133,38 @@ export const LicenseList: React.FC<LicenseListProps> = ({
     };
   };
 
+  // Lisansta yapılan en son yönetici/işlem değişikliği (süre uzatma, iptal,
+  // dondurma vb.) - logs dizisinin başı (unshift ile eklendiği için) en
+  // güncel kaydı gösterir.
+  const ACTION_LABELS: Record<string, string> = {
+    created: 'Oluşturuldu',
+    extended: 'Süre Uzatıldı',
+    paused: 'Donduruldu',
+    unpaused: 'Dondurma Kaldırıldı',
+    revoked: 'İptal Edildi',
+    reactivated: 'Yeniden Aktif Edildi',
+    activated: 'İlk Kez Kullanıldı',
+    used: 'Doğrulandı (Giriş)',
+    reset_usage: 'Kullanım Sıfırlandı',
+    removed_from_app: 'Uygulamadan Silindi',
+  };
+
+  const getLastActionInfo = (license: StoredLicense) => {
+    const lastLog = license.logs && license.logs.length > 0 ? license.logs[0] : null;
+    if (!lastLog) {
+      return { label: '—', dateStr: '', title: '' };
+    }
+    const label = ACTION_LABELS[lastLog.action] || lastLog.action;
+    const dateStr = new Date(lastLog.timestamp).toLocaleString('tr-TR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+    return { label, dateStr, title: lastLog.description };
+  };
+
   // Quick toggle usage
   const handleQuickToggleUsage = async (e: React.MouseEvent, lic: StoredLicense) => {
     e.stopPropagation();
@@ -439,6 +471,7 @@ export const LicenseList: React.FC<LicenseListProps> = ({
                   <th className="py-3.5 px-4">Makine Kilidi</th>
                   <th className="py-3.5 px-4">Durum</th>
                   <th className="py-3.5 px-4">Kullanım Durumu</th>
+                  <th className="py-3.5 px-4">Son İşlem</th>
                   <th className="py-3.5 px-4 text-right">İşlemler</th>
                 </tr>
               </thead>
@@ -446,6 +479,7 @@ export const LicenseList: React.FC<LicenseListProps> = ({
                 {filteredLicenses.map((lic) => {
                   const status = getLicenseStatus(lic);
                   const usage = getUsageStatus(lic);
+                  const lastAction = getLastActionInfo(lic);
 
                   return (
                     <tr
@@ -552,6 +586,16 @@ export const LicenseList: React.FC<LicenseListProps> = ({
                           <span className="text-[10px] text-[#64748b] mt-0.5 ml-1">
                             {usage.subLabel}
                           </span>
+                        </div>
+                      </td>
+
+                      {/* Son İşlem (değişiklik tarihi + ne yapıldığı) */}
+                      <td className="py-3.5 px-4" title={lastAction.title}>
+                        <div className="flex flex-col">
+                          <span className="text-[11px] font-bold text-[#334155]">{lastAction.label}</span>
+                          {lastAction.dateStr && (
+                            <span className="text-[10px] text-[#94a3b8] font-mono mt-0.5">{lastAction.dateStr}</span>
+                          )}
                         </div>
                       </td>
 
