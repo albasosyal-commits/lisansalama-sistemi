@@ -597,6 +597,49 @@ export async function markLicenseRemovedFromApp(
   }
 }
 
+/**
+ * Genel amaçlı hedefli güncelleme: sadece verilen alanları (+ log kaydını)
+ * yazar, lisansın geri kalanına (özellikle is_used/usage_count/last_used_at
+ * gibi verify isteklerinin sıkça güncellediği alanlara) dokunmaz.
+ *
+ * PATCH /:id/status (revoke/pause/reactivate) ve /:id/extend gibi nadir
+ * yönetici işlemleri de, tıpkı recordLicenseUsage gibi, artık TÜM lisans
+ * nesnesini geri yazan saveLicense() yerine bunu kullanır. Aksi halde, tam bu
+ * işlem sırasında gelen bir /api/v1/verify isteği kullanım bilgisini
+ * güncellerken, bu işlemin okuduğu (bir anlık) eski nesne geri yazılıp o
+ * güncellemeyi sessizce ezebilir - gerçekten yaşanan bir hataydı (bir
+ * lisansta usage_count artmaya devam ederken is_used'ın false'a dönmesi).
+ */
+export async function updateLicenseFields(
+  licenseId: string,
+  fields: Record<string, any>,
+  logEntry: LicenseActivityLog
+): Promise<void> {
+  const db = getFirestoreDb();
+  const docRef = doc(db, COLLECTIONS.LICENSES, licenseId);
+
+  // NOT: arrayUnion(...) bir Firestore "sentinel" degeridir, sanitizeForFirestore
+  // gibi genel bir recursive temizleyiciden GECIRILMEMELI (duz obje sanip
+  // icini karistirir, sentinel'i bozar) - bu yuzden logs alani ayri eklenir.
+  const updateData: Record<string, any> = {
+    ...sanitizeForFirestore(fields),
+    logs: arrayUnion(logEntry),
+  };
+
+  await updateDoc(docRef, updateData);
+
+  if (cachedLicenses) {
+    const idx = cachedLicenses.findIndex((l) => l.license_id === licenseId);
+    if (idx >= 0) {
+      cachedLicenses[idx] = {
+        ...cachedLicenses[idx],
+        ...fields,
+        logs: [...(cachedLicenses[idx].logs || []), logEntry],
+      };
+    }
+  }
+}
+
 export async function deleteLicense(licenseId: string): Promise<void> {
   const db = getFirestoreDb();
   await deleteDoc(doc(db, COLLECTIONS.LICENSES, licenseId));

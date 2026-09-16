@@ -2,11 +2,10 @@ import type { IncomingMessage, ServerResponse } from 'http';
 import crypto from 'crypto';
 import {
   getLicenseById,
-  saveLicense,
   recordLicenseUsage,
   markLicenseRemovedFromApp,
+  updateLicenseFields,
   deleteLicense,
-  addLicenseLog,
   signLicensePayload,
   LicensePayload,
 } from '../server/firebaseAdmin.js';
@@ -78,31 +77,41 @@ export default async function handler(
       }
 
       const prevStatus = lic.status;
-      lic.status = status;
+      const nowIso = new Date().toISOString();
+      let statusFields: Record<string, any>;
+      let logAction: 'revoked' | 'paused' | 'unpaused' | 'reactivated';
+      let logDesc: string;
+
       if (status === 'revoked') {
-        lic.revoked_at = new Date().toISOString();
-        lic.paused_at = null;
-        addLicenseLog(lic, 'revoked', 'Lisans yönetici tarafından iptal edildi (revoked).', {
-          revoked_at: lic.revoked_at,
-        });
+        statusFields = { status, revoked_at: nowIso, paused_at: null };
+        logAction = 'revoked';
+        logDesc = 'Lisans yönetici tarafından iptal edildi (revoked).';
       } else if (status === 'paused') {
-        lic.paused_at = new Date().toISOString();
-        lic.revoked_at = null;
-        addLicenseLog(lic, 'paused', 'Lisans geçici olarak donduruldu (paused).', {
-          paused_at: lic.paused_at,
-        });
+        statusFields = { status, paused_at: nowIso, revoked_at: null };
+        logAction = 'paused';
+        logDesc = 'Lisans geçici olarak donduruldu (paused).';
       } else {
-        lic.revoked_at = null;
-        lic.paused_at = null;
-        const logAction = prevStatus === 'paused' ? 'unpaused' : 'reactivated';
-        const logDesc =
+        statusFields = { status, revoked_at: null, paused_at: null };
+        logAction = prevStatus === 'paused' ? 'unpaused' : 'reactivated';
+        logDesc =
           prevStatus === 'paused'
             ? 'Lisans dondurması kaldırıldı ve tekrar aktif edildi.'
             : 'Lisans iptali kaldırıldı ve yeniden aktif edildi.';
-        addLicenseLog(lic, logAction, logDesc);
       }
 
-      await saveLicense(lic);
+      // Hedefli güncelleme - saveLicense(lic) ile tüm nesneyi (is_used/usage_count
+      // dahil) geri yazmaz; bu esnada gelen bir /api/v1/verify isteğinin kullanım
+      // güncellemesini ezme riskini ortadan kaldırır.
+      await updateLicenseFields(lic.license_id, statusFields, {
+        id: 'log-' + crypto.randomUUID(),
+        timestamp: nowIso,
+        action: logAction,
+        description: logDesc,
+        details: statusFields,
+      });
+
+      Object.assign(lic, statusFields);
+
       let statusMessage = 'Lisans yeniden aktif edildi.';
       if (status === 'revoked') statusMessage = 'Lisans başarıyla iptal edildi (revoked).';
       if (status === 'paused') statusMessage = 'Lisans başarıyla donduruldu (paused).';
@@ -159,24 +168,30 @@ export default async function handler(
       if (lic.extra) updatedPayload.extra = lic.extra;
 
       const updatedRawKey = await signLicensePayload(updatedPayload);
-      const oldExpDateStr = new Date(lic.expires_at).toLocaleDateString('tr-TR');
+      const previousExpiresAt = lic.expires_at;
+      const oldExpDateStr = new Date(previousExpiresAt).toLocaleDateString('tr-TR');
       const newExpDateStr = newExpiresAt.toLocaleDateString('tr-TR');
+      const nowIso = new Date().toISOString();
 
-      lic.expires_at = updatedPayload.expires_at;
-      lic.raw_key = updatedRawKey;
-
-      addLicenseLog(
-        lic,
-        'extended',
-        `Lisans süresi ${oldExpDateStr} tarihinden ${newExpDateStr} tarihine kadar uzatıldı.`,
+      // Hedefli güncelleme - saveLicense(lic) ile tüm nesneyi geri yazmaz.
+      await updateLicenseFields(
+        lic.license_id,
+        { expires_at: updatedPayload.expires_at, raw_key: updatedRawKey },
         {
-          previous_expires_at: lic.expires_at,
-          new_expires_at: updatedPayload.expires_at,
-          extend_days: extendDays || null,
+          id: 'log-' + crypto.randomUUID(),
+          timestamp: nowIso,
+          action: 'extended',
+          description: `Lisans süresi ${oldExpDateStr} tarihinden ${newExpDateStr} tarihine kadar uzatıldı.`,
+          details: {
+            previous_expires_at: previousExpiresAt,
+            new_expires_at: updatedPayload.expires_at,
+            extend_days: extendDays || null,
+          },
         }
       );
 
-      await saveLicense(lic);
+      lic.expires_at = updatedPayload.expires_at;
+      lic.raw_key = updatedRawKey;
 
       res.statusCode = 200;
       res.end(
@@ -269,19 +284,23 @@ export default async function handler(
         );
         return;
       } else if (usageAction === 'reset_usage') {
-        lic.is_used = false;
-        lic.usage_count = 0;
-        lic.first_used_at = null;
-        lic.last_used_at = null;
-        lic.last_machine_id = null;
-        lic.removed_from_app = false;
-        lic.removed_from_app_at = null;
-        addLicenseLog(
-          lic,
-          'reset_usage',
-          'Lisans kullanım durumu sıfırlandı ("Kullanımda Değil" durumuna alındı).',
-          { reset_at: nowIso }
-        );
+        const resetFields = {
+          is_used: false,
+          usage_count: 0,
+          first_used_at: null,
+          last_used_at: null,
+          last_machine_id: null,
+          removed_from_app: false,
+          removed_from_app_at: null,
+        };
+        await updateLicenseFields(lic.license_id, resetFields, {
+          id: 'log-' + crypto.randomUUID(),
+          timestamp: nowIso,
+          action: 'reset_usage',
+          description: 'Lisans kullanım durumu sıfırlandı ("Kullanımda Değil" durumuna alındı).',
+          details: { reset_at: nowIso },
+        });
+        Object.assign(lic, resetFields);
       } else {
         res.statusCode = 400;
         res.end(
@@ -294,7 +313,7 @@ export default async function handler(
       }
 
       // Buraya sadece 'reset_usage' dalı ulaşır (mark_used yukarıda erken donuyor).
-      await saveLicense(lic);
+      // Kayıt zaten yukarıda updateLicenseFields ile hedefli şekilde yapıldı.
       res.statusCode = 200;
       res.end(
         JSON.stringify({
