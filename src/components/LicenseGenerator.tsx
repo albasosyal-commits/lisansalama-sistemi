@@ -17,6 +17,9 @@ import {
 } from 'lucide-react';
 import { CreateLicenseParams, LicenseType, Product, StoredLicense } from '../types';
 import { api } from '../services/api';
+import { MoneyInput } from './finance/MoneyInput';
+import { financeApi } from '../services/financeApi';
+import type { MoneyFields } from '../types/finance';
 
 interface LicenseGeneratorProps {
   products: Product[];
@@ -43,6 +46,9 @@ export const LicenseGenerator: React.FC<LicenseGeneratorProps> = ({
   });
   const [machineId, setMachineId] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
+  const [withPrice, setWithPrice] = useState<boolean>(false);
+  const [price, setPrice] = useState<MoneyFields | null>(null);
+  const [financeWarning, setFinanceWarning] = useState<string | null>(null);
   const [maxUsers, setMaxUsers] = useState<string>('');
   const [featureModules, setFeatureModules] = useState<string>('core, export, pro');
 
@@ -112,6 +118,12 @@ export const LicenseGenerator: React.FC<LicenseGeneratorProps> = ({
       return;
     }
 
+    if (withPrice && !price) {
+      setError('Lisans ücreti eksik veya geçersiz (tutar ve döviz kuru gerekli). Ücret girmeyecekseniz kutucuğu kaldırın.');
+      return;
+    }
+    setFinanceWarning(null);
+
     try {
       setLoading(true);
 
@@ -140,6 +152,27 @@ export const LicenseGenerator: React.FC<LicenseGeneratorProps> = ({
       const res = await api.createLicense(params);
       setGeneratedResult(res);
       onLicenseCreated(res.license);
+
+      // Finans: lisans ücretini ayrı koleksiyona yaz (lisans kaydına dokunmaz)
+      if (withPrice && price) {
+        financeApi
+          .addPeriod({
+            ...price,
+            license_id: res.license.license_id,
+            product_id: res.license.product_id,
+            customer: res.license.customer,
+            period_start: res.license.issued_at.slice(0, 10),
+            period_end: res.license.expires_at.slice(0, 10),
+            increase_pct: null,
+            source: 'create',
+            written_off: false,
+            written_off_at: null,
+          })
+          .catch((err) => {
+            console.warn('Lisans ücreti kaydedilemedi:', err);
+            setFinanceWarning('Lisans oluşturuldu ancak ücret kaydedilemedi — Finans sekmesinden ekleyin.');
+          });
+      }
     } catch (err: any) {
       setError(err?.message || 'Lisans oluşturulurken bir hata meydana geldi.');
     } finally {
@@ -436,6 +469,22 @@ export const LicenseGenerator: React.FC<LicenseGeneratorProps> = ({
               </div>
             </div>
 
+            {/* Finans: Lisans Ücreti (opsiyonel) */}
+            <div className="p-4 bg-slate-50 border border-[#e2e8f0] rounded-lg space-y-3">
+              <label className="flex items-center gap-2 text-sm font-semibold text-[#1e293b] cursor-pointer">
+                <input type="checkbox" checked={withPrice} onChange={(e) => setWithPrice(e.target.checked)} />
+                Lisans ücreti gir (Finans)
+              </label>
+              {withPrice && (
+                <MoneyInput
+                  label="Bu dönemin ücreti"
+                  value={null}
+                  onChange={setPrice}
+                  date={dates.issuedAt.slice(0, 10)}
+                />
+              )}
+            </div>
+
             {/* Submit Button (Geometric Balance) */}
             <div className="pt-3">
               <button
@@ -468,6 +517,9 @@ export const LicenseGenerator: React.FC<LicenseGeneratorProps> = ({
                 <span className="w-2.5 h-2.5 rounded-full bg-[#10b981]" />
                 <h3 className="font-bold text-[#1e293b] text-base">Lisans Başarıyla Üretildi</h3>
               </div>
+              {financeWarning && (
+                <span className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">{financeWarning}</span>
+              )}
               <span className="px-2.5 py-0.5 rounded-full bg-[#dcfce7] text-[#166534] text-xs font-semibold border border-[#bbf7d0]">
                 RSA İmzalandı
               </span>

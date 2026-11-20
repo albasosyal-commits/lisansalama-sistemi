@@ -3,8 +3,11 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDocs,
   onSnapshot,
+  query,
   updateDoc,
+  where,
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { FinanceExpense, FinancePayment, FinancePeriod } from '../types/finance';
@@ -48,6 +51,10 @@ export const financeApi = {
   },
   deletePeriod(id: string): Promise<void> {
     return remove(FINANCE_COLLECTIONS.periods, id);
+  },
+  async getPeriodsForLicense(licenseId: string): Promise<FinancePeriod[]> {
+    const snap = await getDocs(query(collection(db, FINANCE_COLLECTIONS.periods), where('license_id', '==', licenseId)));
+    return snap.docs.map(d => ({ ...(d.data() as any), id: d.id }) as FinancePeriod);
   },
 
   addPayment(p: Omit<FinancePayment, 'id' | 'created_at'>): Promise<FinancePayment> {

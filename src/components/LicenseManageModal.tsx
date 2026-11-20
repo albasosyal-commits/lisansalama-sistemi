@@ -17,12 +17,15 @@ import {
   RefreshCw,
   Info,
   History,
+  Wallet,
   PlusCircle,
   CheckCircle2,
 } from 'lucide-react';
 import { StoredLicense } from '../types';
 import { api } from '../services/api';
 import { ConfirmModal } from './ConfirmModal';
+import { useExtendPrice } from './finance/useExtendPrice';
+import { LicenseFinancePanel } from './finance/LicenseFinancePanel';
 
 interface LicenseManageModalProps {
   license: StoredLicense | null;
@@ -41,7 +44,7 @@ export const LicenseManageModal: React.FC<LicenseManageModalProps> = ({
 }) => {
   if (!isOpen || !license) return null;
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'extend' | 'key' | 'history'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'extend' | 'key' | 'history' | 'finance'>('overview');
 
   // Extend duration state
   const [extendMode, setExtendMode] = useState<'preset' | 'custom'>('preset');
@@ -53,6 +56,7 @@ export const LicenseManageModal: React.FC<LicenseManageModalProps> = ({
   });
   const [isExtending, setIsExtending] = useState<boolean>(false);
   const [extendError, setExtendError] = useState<string | null>(null);
+  const extendPrice = useExtendPrice(license);
 
   // Status toggle state
   const [statusConfirmAction, setStatusConfirmAction] = useState<
@@ -147,12 +151,21 @@ export const LicenseManageModal: React.FC<LicenseManageModalProps> = ({
         payload = { customExpiresAt: new Date(customDate + 'T23:59:59Z').toISOString() };
       }
 
+      const priceError = extendPrice.validate();
+      if (priceError) {
+        setExtendError(priceError);
+        setIsExtending(false);
+        return;
+      }
+
+      const previousExpiresAt = license.expires_at;
       const updated = await api.extendLicense(license.license_id, payload);
+      const financeNote = await extendPrice.record(previousExpiresAt, updated);
       onShowToast(
-        'success',
+        financeNote ? 'error' : 'success',
         `"${license.customer}" lisans süresi ${new Date(updated.expires_at).toLocaleDateString(
           'tr-TR'
-        )} tarihine kadar uzatıldı ve RSA anahtarı güncellendi.`
+        )} tarihine kadar uzatıldı ve RSA anahtarı güncellendi.` + financeNote
       );
       onRefresh();
       setActiveTab('overview');
@@ -301,6 +314,18 @@ export const LicenseManageModal: React.FC<LicenseManageModalProps> = ({
           >
             <History className="w-3.5 h-3.5" />
             <span>İşlem Geçmişi ({license.logs?.length || 1})</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('finance')}
+            className={`py-3 px-3.5 text-xs font-bold border-b-2 transition cursor-pointer flex items-center space-x-1.5 whitespace-nowrap ${
+              activeTab === 'finance'
+                ? 'border-[#3b82f6] text-[#1d4ed8] bg-white'
+                : 'border-transparent text-[#64748b] hover:text-[#1e293b]'
+            }`}
+          >
+            <Wallet className="w-3.5 h-3.5" />
+            <span>Finans</span>
           </button>
         </div>
 
@@ -725,6 +750,8 @@ export const LicenseManageModal: React.FC<LicenseManageModalProps> = ({
                 </div>
               )}
 
+              {extendPrice.section}
+
               <div className="p-3 bg-[#f0fdf4] border border-[#bbf7d0] rounded-lg text-xs text-[#166534] leading-relaxed">
                 <strong>Otomatik RSA İmzalama:</strong> Süre uzatıldığında yeni bitiş tarihi lisans payload'ına işlenir ve sistemdeki RSA Private Key ile anında imzalanır. Yeni .lic dosyasını müşterinize iletebilirsiniz.
               </div>
@@ -816,6 +843,9 @@ export const LicenseManageModal: React.FC<LicenseManageModalProps> = ({
               </div>
             </div>
           )}
+
+          {/* TAB 5: FINANCE */}
+          {activeTab === 'finance' && <LicenseFinancePanel license={license} />}
 
           {/* TAB 4: ACTIVITY LOG / HISTORY */}
           {activeTab === 'history' && (

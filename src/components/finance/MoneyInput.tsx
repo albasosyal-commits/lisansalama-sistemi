@@ -13,11 +13,13 @@ interface MoneyInputProps {
   date: string;
   lockedCurrency?: Currency;
   label?: string;
+  /** true ise başlangıç değeri dövizli olsa bile kur, `date` için yeniden getirilir (ör. yeni dönem). */
+  refreshRate?: boolean;
 }
 
 const fmtNum = (n: number) => String(n).replace('.', ',');
 
-export const MoneyInput: React.FC<MoneyInputProps> = ({ value, onChange, date, lockedCurrency, label = 'Tutar' }) => {
+export const MoneyInput: React.FC<MoneyInputProps> = ({ value, onChange, date, lockedCurrency, label = 'Tutar', refreshRate = false }) => {
   const [amountStr, setAmountStr] = useState(value ? fmtNum(value.amount) : '');
   const [currency, setCurrency] = useState<Currency>(lockedCurrency ?? value?.currency ?? 'TRY');
   const [rateStr, setRateStr] = useState(value && value.currency !== 'TRY' ? fmtNum(value.fx_rate) : '');
@@ -42,7 +44,7 @@ export const MoneyInput: React.FC<MoneyInputProps> = ({ value, onChange, date, l
   }, [lockedCurrency]);
 
   // Para birimi veya tarih değişince kuru otomatik getir (elle girilmediyse)
-  const skipFirstFetch = useRef(!!value && value.currency !== 'TRY');
+  const skipFirstFetch = useRef(!refreshRate && !!value && value.currency !== 'TRY');
   useEffect(() => {
     if (currency === 'TRY') {
       setRateError(false);

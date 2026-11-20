@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Calendar, Clock, Sparkles, X, Check, RefreshCw, AlertCircle, ArrowRight } from 'lucide-react';
 import { StoredLicense } from '../types';
 import { api } from '../services/api';
+import { useExtendPrice } from './finance/useExtendPrice';
 
 interface ExtendLicenseModalProps {
   license: StoredLicense | null;
@@ -27,6 +28,7 @@ export const ExtendLicenseModal: React.FC<ExtendLicenseModalProps> = ({
   });
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const extendPrice = useExtendPrice(license);
 
   const presets = [
     { label: '+10 Gün (Demo)', days: 10 },
@@ -67,12 +69,21 @@ export const ExtendLicenseModal: React.FC<ExtendLicenseModalProps> = ({
         payload = { customExpiresAt: new Date(customDate + 'T23:59:59Z').toISOString() };
       }
 
+      const priceError = extendPrice.validate();
+      if (priceError) {
+        setError(priceError);
+        setLoading(false);
+        return;
+      }
+
+      const previousExpiresAt = license.expires_at;
       const updated = await api.extendLicense(license.license_id, payload);
+      const financeNote = await extendPrice.record(previousExpiresAt, updated);
       onSuccess(
         updated,
         `"${license.customer}" lisans süresi ${new Date(updated.expires_at).toLocaleDateString(
           'tr-TR'
-        )} tarihine kadar uzatıldı ve RSA anahtarı güncellendi.`
+        )} tarihine kadar uzatıldı ve RSA anahtarı güncellendi.` + financeNote
       );
       onClose();
     } catch (err: any) {
@@ -219,6 +230,9 @@ export const ExtendLicenseModal: React.FC<ExtendLicenseModalProps> = ({
               />
             </div>
           )}
+
+          {/* Finans: yeni dönem ücreti */}
+          {extendPrice.section}
 
           {/* Cryptographic note */}
           <div className="p-3 bg-[#f8fafc] rounded-lg border border-[#e2e8f0] text-[11px] text-[#64748b] leading-relaxed">
