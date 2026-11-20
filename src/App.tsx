@@ -9,6 +9,7 @@ import { ApiDiagnosticsView } from './components/ApiDiagnosticsView';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LoginScreen } from './components/auth/LoginScreen';
 import { AccountSettingsView } from './components/AccountSettingsView';
+import { FinanceView } from './components/finance/FinanceView';
 
 import {
   DashboardStats as StatsType,
@@ -231,6 +232,8 @@ function Dashboard() {
               {activeTab === 'firebase' && <FirebaseStatusView />}
 
               {activeTab === 'diagnostics' && <ApiDiagnosticsView />}
+
+              {activeTab === 'finance' && <FinanceView licenses={licenses} products={products} />}
 
               {activeTab === 'account' && <AccountSettingsView />}
             </div>

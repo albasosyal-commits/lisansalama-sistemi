@@ -16,11 +16,12 @@ import {
   KeyRound,
   LogOut,
   ChevronDown,
+  Wallet,
 } from 'lucide-react';
 import { DashboardStats, KeyMetadata } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 
-export type TabType = 'create' | 'list' | 'products' | 'firebase' | 'diagnostics' | 'account';
+export type TabType = 'create' | 'list' | 'products' | 'firebase' | 'diagnostics' | 'finance' | 'account';
 
 interface NavbarProps {
   activeTab: TabType;
@@ -47,6 +48,7 @@ export const Sidebar: React.FC<NavbarProps> = ({
     { id: 'products' as TabType, label: 'Ürün Yönetimi', icon: Package, desc: 'Proje & product_id' },
     { id: 'firebase' as TabType, label: 'Firebase & Firestore', icon: Database, desc: 'Bulut Veritabanı Bağlantısı' },
     { id: 'diagnostics' as TabType, label: 'API Tanılama', icon: Activity, desc: 'Servis & Hata Testi' },
+    { id: 'finance' as TabType, label: 'Finans', icon: Wallet, desc: 'Gelir, Tahsilat & Gider' },
     { id: 'account' as TabType, label: 'Hesap Ayarları', icon: User, desc: 'Kullanıcı Adı & Şifre' },
   ];
 
@@ -203,6 +205,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
     products: { title: 'Ürün Yönetimi', subtitle: 'Yazılım ve proje tanımlamaları (product_id)' },
     firebase: { title: 'Firebase & Firestore Veritabanı', subtitle: 'Bulut Firestore bağlantı durumu, yapılandırma ve koleksiyonlar' },
     diagnostics: { title: 'API Tanılama Merkezi', subtitle: 'Servis sağlık kontrolü, lisans testi ve hata kodu referansı' },
+    finance: { title: 'Finans', subtitle: 'Lisans ücretleri, tahsilat, giderler ve kâr' },
     account: { title: 'Hesap Ayarları', subtitle: 'Kullanıcı adı ve şifre yönetimi' },
   };
 
