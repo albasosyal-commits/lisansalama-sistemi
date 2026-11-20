@@ -3,6 +3,9 @@ import { AlertCircle, BarChart3, FileText, Receipt, RefreshCw, Wallet } from 'lu
 import type { Product, StoredLicense } from '../../types';
 import { useFinanceData } from './useFinanceData';
 import { FinanceSummaryTab } from './FinanceSummaryTab';
+import { PeriodsTab } from './PeriodsTab';
+import { PaymentsTable } from './PaymentsTable';
+import { cardCls } from './format';
 
 type SubTab = 'summary' | 'periods' | 'payments' | 'expenses';
 
@@ -52,6 +55,17 @@ export const FinanceView: React.FC<Props> = ({ licenses, products }) => {
         <>
           {tab === 'summary' && (
             <FinanceSummaryTab licenses={licenses} products={products} periods={periods} payments={payments} expenses={expenses} />
+          )}
+          {tab === 'periods' && (
+            <PeriodsTab licenses={licenses} products={products} periods={periods} payments={payments} />
+          )}
+          {tab === 'payments' && (
+            <div className={cardCls}>
+              <p className="px-4 py-3 border-b border-[#e2e8f0] text-xs text-[#64748b]">
+                Yeni ödeme, "Lisans Ücretleri" sekmesinde ilgili dönemin yanındaki + butonuyla eklenir.
+              </p>
+              <PaymentsTable payments={payments} allPayments={payments} periods={periods} licenses={licenses} />
+            </div>
           )}
         </>
       )}
