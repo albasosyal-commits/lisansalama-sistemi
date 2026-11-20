@@ -18,7 +18,7 @@ Bu dosya, bu repoda çalışan Claude Code oturumları için proje rehberidir.
 - **Veritabanı**: Google **Firestore**, varsayılan olmayan (`(default)` değil) `lisanslamaaaa` adlı bir veritabanı.
 - **Kriptografi**: Node'un yerleşik `crypto` modülü — RSA-2048 anahtar çifti + SHA-256 imza (lisans imzalama/doğrulama), AES-256-GCM + PBKDF2 (private key'i Firestore'da şifreli saklamak için).
 - **Kimlik doğrulama**: **Yok.** Panelde login/session/rol yok, Firestore kuralları herkese açık (aşağıya bakın). `firebase-admin` ve `@google/genai` (Gemini) paketleri `package.json`'da var ama kodda fiilen kullanılmıyor gibi görünüyor — proje muhtemelen Google AI Studio "applet" olarak scaffold edilmiş (`metadata.json`, `assets/.aistudio/`), Gemini entegrasyonu kalıntı/kullanılmıyor.
-- **Test altyapısı**: Yok. Test framework, `*.test.*` dosyası veya `test` script'i bulunmuyor. `npm run lint` sadece `tsc --noEmit` çalıştırır (tip kontrolü, gerçek lint değil).
+- **Test altyapısı**: Vitest (`npm test` → `vitest run`), şu an yalnız finans modülünün saf fonksiyonları için (`src/services/financeCalc.test.ts`, `fxRate.test.ts`, `src/components/finance/format.test.ts`). Lisans/RSA tarafında test yok. `npm run lint` sadece `tsc --noEmit` çalıştırır (tip kontrolü, gerçek lint değil).
 - Hem `package-lock.json` hem `bun.lock` var (npm/bun karışık kullanılmış).
 
 ## Mimari — En Kritik Nokta: İkili Veri Yolu + Vercel'de Eksik Endpoint'ler
@@ -67,6 +67,7 @@ Bu proje standart bir "frontend → tek API → veritabanı" akışı **DEĞİL*
 │       ├── ApiDiagnosticsView.tsx    # "API Tanılama Merkezi" — endpoint health-check, canlı /api/v1/verify test konsolu, hata kodu referans tablosu
 │       ├── FirebaseStatusView.tsx    # Firebase/Firestore bağlantı durumu, config editörü, bağlantı testi (~915 satır)
 │       ├── DashboardStats.tsx, Navbar.tsx, CodeSnippetsView.tsx, DocumentationView.tsx, ConfirmModal.tsx
+│       └── finance/                  # "Finans" sekmesi: özet, lisans ücretleri, ödemeler, giderler, MoneyInput, useExtendPrice
 ├── data/licenses.json         # Eski/örnek lisans verisi (Firestore öncesi kalıntı olabilir)
 ├── firestore.rules            # allow read, write: if true  — HERKESE AÇIK, auth yok
 ├── firebase.json              # { firestore: { database: "lisanslamaaaa", rules: "firestore.rules" } }
@@ -96,6 +97,12 @@ Bu proje standart bir "frontend → tek API → veritabanı" akışı **DEĞİL*
   { algorithm, keySize, created_at, fingerprint, publicKey,
     encryptedPrivateKey: { encrypted, iv, tag, salt } }  // AES-256-GCM, LICENSE_MASTER_SECRET ile
   ```
+
+- **Finans koleksiyonları** (yalnız tarayıcıdan client SDK ile; `licenses` dokümanlarına finans verisi **yazılmaz**). Hepsi ortak para alanları taşır: `amount, currency ('TRY'|'USD'|'EUR'), fx_rate, fx_date, fx_source ('auto'|'manual'), amount_try` — kur kayıt anında sabitlenir (frankfurter.app/ECB).
+  - **`finance_periods`**: lisansın ücretli dönemi — `license_id, product_id, customer, period_start, period_end, increase_pct, source ('create'|'extend'|'manual'), written_off, written_off_at`
+  - **`finance_payments`**: tahsilat — `license_id, period_id, customer, product_id, paid_at, method`
+  - **`finance_expenses`**: gider — `title, category, product_id|null, spent_at, recurrence ('none'|'monthly'|'yearly'), recurrence_end`
+  - Hesap kuralları `src/services/financeCalc.ts`'de (ödeme durumu dönemin kendi para biriminde; satış `period_start` yılına; alacak yıldan bağımsız). Tasarım: `docs/superpowers/specs/2026-11-20-finans-modulu-design.md`.
 
 **Lisans anahtarı formatı**: `base64(JSON payload).base64(RSA-SHA256 imza)` — sadece public key ile çevrimdışı doğrulanabilir.
 
@@ -127,6 +134,7 @@ npm run dev      # tsx server.ts — http://localhost:3000 (Express + Vite middl
 npm run build    # vite build && esbuild server.ts --bundle ... --outfile=dist/server.cjs
 npm start        # node dist/server.cjs — prod build'i yerel çalıştırır (Vercel'in DEĞİL, kendi build'inin davranışı)
 npm run lint      # tsc --noEmit (sadece tip kontrolü)
+npm test          # vitest run (finans hesaplama testleri)
 ```
 
 ## Ortam Değişkenleri
@@ -147,7 +155,7 @@ npm run lint      # tsc --noEmit (sadece tip kontrolü)
 4. **Secrets kaynak kodda hardcoded**: Firebase web config (apiKey dahil, 4+ yerde tekrarlanmış) ve `LICENSE_MASTER_SECRET` varsayılanı plaintext olarak repoda duruyor.
 5. **İki Firestore katmanı arasında tutarsızlık** (`license_keys` doküman ID'si) — bkz. Mimari bölümü.
 6. **Otomatik push mekanizmaları**: `auto-push.ps1` (10 sn'de bir polling) VE `.git/hooks/post-commit` (her commit sonrası) — kullanıcı açıkça istemedikçe bu betikleri tetikleme veya bunlara güvenerek "otomatik push edilir" varsayımıyla hareket etme; bir commit oluşturulduğunda hook zaten push edebilir.
-7. Test altyapısı yok — davranış değişikliklerini elle (uygulamayı çalıştırıp) doğrulamak gerekiyor.
+7. Test altyapısı sınırlı (yalnız finans hesapları) — diğer davranış değişikliklerini elle (uygulamayı çalıştırıp) doğrulamak gerekiyor.
 
 ## Kod Kuralları
 

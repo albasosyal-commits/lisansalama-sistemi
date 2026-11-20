@@ -132,6 +132,20 @@ Claude Code oturumlarında yapılan işlemlerin kronolojik özetidir. Teknik mim
 - Ana ekrandan "Doğrulama Sandbox", "RSA Anahtarları", "SDK Entegrasyonu", "Mimari Dokümanı"
   sekmeleri ve ilgili buton/prop'lar (`onNavigateToVerifier` dahil) kullanıcı isteğiyle kaldırıldı.
 
+## 11. Finans Modülü (2026-11-20)
+
+- Panele "Finans" sekmesi eklendi: lisans başına dönem ücreti, tahsilat (kısmi/taksitli),
+  uygulama hizmet giderleri (tek seferlik/aylık/yıllık) ve TL bazlı yıl özeti + ürün bazında kâr.
+- Çoklu para birimi (TRY/USD/EUR): kur kayıt tarihinde frankfurter.app'ten (ECB) alınıp sabitlenir,
+  elle düzeltilebilir. Ödeme durumu dönemin kendi para biriminde; kur değişimi ayrı "Kur farkı".
+- Lisans oluşturma ve iki süre uzatma akışına (liste penceresi + yönetim penceresi) opsiyonel
+  ücret alanı; uzatmada önceki ücret + "% artış" ile yeni fiyat önerisi. Lisans yönetim
+  penceresine "Finans" sekmesi.
+- Veriler `finance_periods` / `finance_payments` / `finance_expenses` koleksiyonlarında;
+  `licenses` dokümanlarına dokunulmuyor. Vitest eklendi (hesaplama testleri).
+- Tasarım: `docs/superpowers/specs/2026-11-20-finans-modulu-design.md`,
+  plan: `docs/superpowers/plans/2026-11-20-finans-modulu.md`. `feature/finans` dalında.
+
 ---
 
 **Genel durum**: Üç kulüp uygulaması (democlub, sporclub, anadoluakçaysporclub) artık
