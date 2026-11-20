@@ -141,3 +141,8 @@ export function buildSummary(
 export function normalizeCustomer(s: string): string {
   return s.trim().replace(/\s+/g, ' ').toLocaleLowerCase('tr-TR');
 }
+
+/** Döneme bağlı ödeme varsa dönemin para birimi değiştirilemez (ödeme durumu dönemin para biriminde ölçülür). */
+export function isPeriodCurrencyLocked(period: FinancePeriod | undefined, payments: FinancePayment[]): boolean {
+  return !!period && payments.some(p => p.period_id === period.id);
+}

@@ -3,7 +3,7 @@ import { AlertCircle, RefreshCw } from 'lucide-react';
 import { CURRENCIES, type Currency, type MoneyFields } from '../../types/finance';
 import { fetchFxRate } from '../../services/fxRate';
 import { toMoney } from '../../services/financeCalc';
-import { formatMoney, inputCls, labelCls, parseTrAmount } from './format';
+import { formatMoney, inputCls, labelCls, parseRate, parseTrAmount, shouldAutoFetchRate } from './format';
 
 interface MoneyInputProps {
   /** Başlangıç değeri (düzenleme / önceden doldurma). Değişince form yeniden doldurulur. */
@@ -43,15 +43,15 @@ export const MoneyInput: React.FC<MoneyInputProps> = ({ value, onChange, date, l
     if (lockedCurrency) setCurrency(lockedCurrency);
   }, [lockedCurrency]);
 
-  // Para birimi veya tarih değişince kuru otomatik getir (elle girilmediyse)
-  const skipFirstFetch = useRef(!refreshRate && !!value && value.currency !== 'TRY');
+  // Para birimi veya tarih değişince kuru otomatik getir. Düzenlenen kaydın kuru, para birimi/tarih
+  // açılıştaki gibi kaldıkça korunur (durum karşılaştırması — StrictMode çift çalıştırmasına dayanıklı).
+  const initialRef = useRef({ value, date });
   useEffect(() => {
     if (currency === 'TRY') {
       setRateError(false);
       return;
     }
-    if (skipFirstFetch.current) {
-      skipFirstFetch.current = false;
+    if (!shouldAutoFetchRate(initialRef.current.value, initialRef.current.date, currency, date, refreshRate)) {
       return;
     }
     let cancelled = false;
@@ -76,7 +76,7 @@ export const MoneyInput: React.FC<MoneyInputProps> = ({ value, onChange, date, l
   }, [currency, date]);
 
   const amount = parseTrAmount(amountStr);
-  const rate = currency === 'TRY' ? 1 : parseTrAmount(rateStr);
+  const rate = currency === 'TRY' ? 1 : parseRate(rateStr);
   const money = amount !== null && rate !== null ? toMoney(amount, currency, rate, currency === 'TRY' ? date : fxDate, currency === 'TRY' ? 'auto' : source) : null;
 
   const onChangeRef = useRef(onChange);

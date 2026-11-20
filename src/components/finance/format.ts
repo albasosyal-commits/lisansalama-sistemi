@@ -48,3 +48,28 @@ export const btnPrimary =
 export const btnSecondary =
   'px-4 py-2 bg-white border border-[#cbd5e1] hover:bg-slate-50 text-[#334155] rounded-lg text-sm font-semibold transition';
 export const cardCls = 'bg-white border border-[#e2e8f0] rounded-xl shadow-sm';
+
+/** Döviz kuru girişi: nokta da virgül de her zaman ONDALIK ayraçtır ("41.250" → 41.25). Binlik ayraç kabul edilmez. */
+export function parseRate(s: string): number | null {
+  const t = s.trim().replace(/\s/g, '').replace(',', '.');
+  if (!/^\d+(\.\d+)?$/.test(t)) return null;
+  const n = Number(t);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+/**
+ * MoneyInput kuru otomatik getirmeli mi? Kayıtlı (düzenlenen) dövizli bir değer, para birimi ve tarihi
+ * açılıştaki haliyle duruyorsa kayıtlı kur korunur. StrictMode'da efekt iki kez çalışsa da sonuç aynıdır.
+ */
+export function shouldAutoFetchRate(
+  initial: { currency: Currency } | null,
+  initialDate: string,
+  currency: Currency,
+  date: string,
+  refreshRate: boolean
+): boolean {
+  if (currency === 'TRY') return false;
+  if (refreshRate) return true;
+  if (initial && initial.currency !== 'TRY' && initial.currency === currency && date === initialDate) return false;
+  return true;
+}

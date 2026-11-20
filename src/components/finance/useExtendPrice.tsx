@@ -3,6 +3,7 @@ import type { StoredLicense } from '../../types';
 import type { FinancePeriod, MoneyFields } from '../../types/finance';
 import { financeApi } from '../../services/financeApi';
 import { applyIncrease } from '../../services/financeCalc';
+import { withTimeout } from '../../services/timeout';
 import { MoneyInput } from './MoneyInput';
 import { formatMoney, todayStr } from './format';
 
@@ -56,7 +57,7 @@ export function useExtendPrice(license: StoredLicense) {
     if (!withPrice || !price) return '';
     const pct = pctNumber();
     try {
-      await financeApi.addPeriod({
+      await withTimeout(financeApi.addPeriod({
         ...price,
         license_id: license.license_id,
         product_id: license.product_id,
@@ -67,7 +68,7 @@ export function useExtendPrice(license: StoredLicense) {
         source: 'extend',
         written_off: false,
         written_off_at: null,
-      });
+      }), 5000);
       return '';
     } catch (err) {
       console.warn('Yeni dönem ücreti kaydedilemedi:', err);

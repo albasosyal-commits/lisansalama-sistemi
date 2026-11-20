@@ -134,7 +134,7 @@ export const PeriodsTable: React.FC<Props> = ({ periods, payments, licenses, pro
       </div>
 
       {editPeriod && (
-        <PeriodForm license={licenseOf(editPeriod)} period={editPeriod} onSaved={() => {}} onClose={() => setEditPeriod(null)} />
+        <PeriodForm license={licenseOf(editPeriod)} period={editPeriod} payments={payments} onSaved={() => {}} onClose={() => setEditPeriod(null)} />
       )}
       {payFor && (
         <PaymentForm

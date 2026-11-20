@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { StoredLicense } from '../../types';
-import type { FinancePeriod, MoneyFields } from '../../types/finance';
+import type { FinancePayment, FinancePeriod, MoneyFields } from '../../types/finance';
+import { isPeriodCurrencyLocked } from '../../services/financeCalc';
 import { financeApi } from '../../services/financeApi';
 import { FinanceModal } from './FinanceModal';
 import { MoneyInput } from './MoneyInput';
@@ -12,11 +13,13 @@ interface Props {
   /** Lisans seçimi için (yalnız yeni kayıt ve license=null iken). */
   licenses?: StoredLicense[];
   period?: FinancePeriod;
+  /** Düzenlemede: ödemesi olan dönemin para birimini kilitlemek için. */
+  payments?: FinancePayment[];
   onSaved: () => void;
   onClose: () => void;
 }
 
-export const PeriodForm: React.FC<Props> = ({ license, licenses = [], period, onSaved, onClose }) => {
+export const PeriodForm: React.FC<Props> = ({ license, licenses = [], period, payments = [], onSaved, onClose }) => {
   const [licenseId, setLicenseId] = useState(license?.license_id ?? period?.license_id ?? '');
   const selected = license ?? licenses.find(l => l.license_id === licenseId) ?? null;
 
@@ -113,7 +116,16 @@ export const PeriodForm: React.FC<Props> = ({ license, licenses = [], period, on
       </div>
       {end < start && <p className="text-xs text-red-600">Bitiş tarihi başlangıçtan önce olamaz.</p>}
 
-      <MoneyInput label="Dönem ücreti" value={period ?? null} onChange={setMoney} date={start || todayStr()} />
+      <MoneyInput
+        label="Dönem ücreti"
+        value={period ?? null}
+        onChange={setMoney}
+        date={start || todayStr()}
+        lockedCurrency={isPeriodCurrencyLocked(period, payments) ? period!.currency : undefined}
+      />
+      {isPeriodCurrencyLocked(period, payments) && (
+        <p className="text-[11px] text-[#94a3b8]">Bu döneme ödeme girildiği için para birimi değiştirilemez.</p>
+      )}
 
       <div>
         <label className={labelCls}>Not</label>

@@ -115,3 +115,11 @@ test('buildSummary: satış başlangıç yılına, alacak yıldan bağımsız, n
 });
 
 test('normalizeCustomer', () => expect(normalizeCustomer('  ABC   İnşaat ')).toBe('abc inşaat'));
+
+import { isPeriodCurrencyLocked } from './financeCalc';
+
+test('isPeriodCurrencyLocked: ödemesi olan dönemin para birimi kilitli', () => {
+  expect(isPeriodCurrencyLocked(usdPeriod, [pay({ amount: 500, amount_try: 18000 })])).toBe(true);
+  expect(isPeriodCurrencyLocked(usdPeriod, [pay({ period_id: 'baska' })])).toBe(false);
+  expect(isPeriodCurrencyLocked(undefined, [])).toBe(false);
+});
