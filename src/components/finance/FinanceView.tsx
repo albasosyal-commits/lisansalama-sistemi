@@ -6,6 +6,7 @@ import { FinanceSummaryTab } from './FinanceSummaryTab';
 import { PeriodsTab } from './PeriodsTab';
 import { PaymentsTable } from './PaymentsTable';
 import { cardCls } from './format';
+import { ExpensesTab } from './ExpensesTab';
 
 type SubTab = 'summary' | 'periods' | 'payments' | 'expenses';
 
@@ -67,6 +68,7 @@ export const FinanceView: React.FC<Props> = ({ licenses, products }) => {
               <PaymentsTable payments={payments} allPayments={payments} periods={periods} licenses={licenses} />
             </div>
           )}
+          {tab === 'expenses' && <ExpensesTab products={products} expenses={expenses} />}
         </>
       )}
     </div>
