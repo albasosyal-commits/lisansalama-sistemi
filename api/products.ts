@@ -34,7 +34,7 @@ export default async function handler(req: IncomingMessage & { body?: any }, res
     }
 
     if (req.method === 'POST') {
-      const { name, productId, description, version } = req.body || {};
+      const { name, productId, description, version, mobile_app } = req.body || {};
       if (!name || !productId) {
         res.statusCode = 400;
         res.end(
@@ -67,6 +67,7 @@ export default async function handler(req: IncomingMessage & { body?: any }, res
         description: description ? String(description).trim() : '',
         version: version ? String(version).trim() : '1.0.0',
         created_at: new Date().toISOString(),
+        mobile_app: mobile_app === true,
       };
 
       await saveProduct(newProduct);

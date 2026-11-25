@@ -20,12 +20,14 @@ import {
   Wallet,
   PlusCircle,
   CheckCircle2,
+  Smartphone,
 } from 'lucide-react';
 import { StoredLicense } from '../types';
 import { api } from '../services/api';
 import { ConfirmModal } from './ConfirmModal';
 import { useExtendPrice } from './finance/useExtendPrice';
 import { LicenseFinancePanel } from './finance/LicenseFinancePanel';
+import { normalizeAppDomain } from '../../server/appDomain';
 
 interface LicenseManageModalProps {
   license: StoredLicense | null;
@@ -69,6 +71,35 @@ export const LicenseManageModal: React.FC<LicenseManageModalProps> = ({
   const [usageLoading, setUsageLoading] = useState<boolean>(false);
 
   const [copied, setCopied] = useState<boolean>(false);
+
+  // Sosyalritim mobil uygulaması kurum adresi
+  const [savedAppDomain, setSavedAppDomain] = useState<string | null>(license.app_domain || null);
+  const [appDomainInput, setAppDomainInput] = useState<string>(license.app_domain || '');
+  const [appDomainEditing, setAppDomainEditing] = useState<boolean>(false);
+  const [appDomainSaving, setAppDomainSaving] = useState<boolean>(false);
+  const [appDomainError, setAppDomainError] = useState<string | null>(null);
+
+  const handleSaveAppDomain = async (clear = false) => {
+    setAppDomainError(null);
+    const raw = clear ? '' : appDomainInput;
+    if (raw.trim() && !normalizeAppDomain(raw)) {
+      setAppDomainError('Geçersiz adres. Örnek: akcaysk.sosyalritim.com.tr');
+      return;
+    }
+    try {
+      setAppDomainSaving(true);
+      const saved = await api.updateLicenseAppDomain(license.license_id, raw.trim() ? raw : null);
+      setSavedAppDomain(saved);
+      setAppDomainInput(saved || '');
+      setAppDomainEditing(false);
+      onShowToast('success', saved ? `Kurum adresi "${saved}" olarak kaydedildi.` : 'Kurum adresi kaldırıldı.');
+      onRefresh();
+    } catch (err: any) {
+      setAppDomainError(err?.message || 'Kurum adresi kaydedilemedi.');
+    } finally {
+      setAppDomainSaving(false);
+    }
+  };
 
   const handleToggleUsage = async (action: 'mark_used' | 'reset_usage') => {
     try {
@@ -485,6 +516,88 @@ export const LicenseManageModal: React.FC<LicenseManageModalProps> = ({
                     </div>
                   )}
                 </div>
+              </div>
+
+              {/* Sosyalritim mobil uygulaması: kurum adresi */}
+              <div className="bg-white border border-[#e2e8f0] rounded-xl p-4 space-y-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <h4 className="text-xs font-bold text-[#1e293b] uppercase tracking-wider flex items-center gap-1.5">
+                    <Smartphone className="w-3.5 h-3.5 text-[#7c3aed]" />
+                    <span>Kurum adresi (Sosyalritim mobil uygulaması)</span>
+                  </h4>
+                  {!appDomainEditing && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAppDomainInput(savedAppDomain || '');
+                        setAppDomainError(null);
+                        setAppDomainEditing(true);
+                      }}
+                      className="shrink-0 text-xs font-semibold text-[#3b82f6] hover:text-[#2563eb] transition cursor-pointer"
+                    >
+                      {savedAppDomain ? 'Düzenle' : 'Ekle'}
+                    </button>
+                  )}
+                </div>
+
+                {!appDomainEditing ? (
+                  savedAppDomain ? (
+                    <span className="inline-flex max-w-full items-center font-mono text-xs text-[#1e293b] bg-[#f5f3ff] px-2 py-1 rounded border border-[#ddd6fe] break-all">
+                      {savedAppDomain}
+                    </span>
+                  ) : (
+                    <p className="text-xs text-[#64748b]">Tanımlı değil — kulüp mobil uygulamanın kurum listesinde görünmez.</p>
+                  )
+                ) : (
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      inputMode="url"
+                      autoCapitalize="none"
+                      autoCorrect="off"
+                      spellCheck={false}
+                      value={appDomainInput}
+                      onChange={(e) => setAppDomainInput(e.target.value)}
+                      placeholder="ör. akcaysk.sosyalritim.com.tr"
+                      className="w-full bg-white border border-[#cbd5e1] rounded-lg px-3 py-2 text-sm font-mono text-[#1e293b] placeholder-slate-400 focus:border-[#3b82f6] outline-none"
+                    />
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        disabled={appDomainSaving}
+                        onClick={() => handleSaveAppDomain(false)}
+                        className="px-3 py-1.5 rounded-lg bg-[#3b82f6] hover:bg-[#2563eb] text-white text-xs font-semibold transition cursor-pointer disabled:opacity-60"
+                      >
+                        {appDomainSaving ? 'Kaydediliyor…' : 'Kaydet'}
+                      </button>
+                      {savedAppDomain && (
+                        <button
+                          type="button"
+                          disabled={appDomainSaving}
+                          onClick={() => handleSaveAppDomain(true)}
+                          className="px-3 py-1.5 rounded-lg border border-[#fecaca] bg-[#fff1f2] hover:bg-[#ffe4e6] text-[#be123c] text-xs font-semibold transition cursor-pointer disabled:opacity-60"
+                        >
+                          Adresi kaldır
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        disabled={appDomainSaving}
+                        onClick={() => {
+                          setAppDomainEditing(false);
+                          setAppDomainError(null);
+                        }}
+                        className="px-3 py-1.5 rounded-lg border border-[#cbd5e1] bg-white hover:bg-slate-50 text-[#334155] text-xs font-semibold transition cursor-pointer disabled:opacity-60"
+                      >
+                        Vazgeç
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {appDomainError && <p className="text-[11px] text-[#be123c]">{appDomainError}</p>}
+                <p className="text-[11px] text-[#64748b]">
+                  Ürün "Mobil uygulamada kullanılır" işaretliyse, lisans aktif ve süresi dolmamışsa kulüp mobil uygulamada listelenir. Lisans anahtarı değişmez.
+                </p>
               </div>
 
               {/* Application Usage & Login Information Card */}

@@ -7,6 +7,7 @@ import {
   AlertCircle,
   X,
   ArrowRight,
+  Smartphone,
 } from 'lucide-react';
 import { Product } from '../types';
 import { api } from '../services/api';
@@ -28,6 +29,11 @@ export const ProductManager: React.FC<ProductManagerProps> = ({
   const [productId, setProductId] = useState('');
   const [description, setDescription] = useState('');
   const [version, setVersion] = useState('1.0.0');
+  const [mobileApp, setMobileApp] = useState(false);
+
+  // "Mobil uygulamada kullanılır" anahtarı: yenileme gelene kadar anlık görünüm
+  const [mobileOverrides, setMobileOverrides] = useState<Record<string, boolean>>({});
+  const [mobileSavingId, setMobileSavingId] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -86,6 +92,7 @@ export const ProductManager: React.FC<ProductManagerProps> = ({
         productId: productId.trim().toLowerCase(),
         description: description.trim(),
         version: version.trim() || '1.0.0',
+        mobile_app: mobileApp,
       });
 
       showToast('success', `"${name}" ürünü başarıyla eklendi!`);
@@ -93,12 +100,37 @@ export const ProductManager: React.FC<ProductManagerProps> = ({
       setProductId('');
       setDescription('');
       setVersion('1.0.0');
+      setMobileApp(false);
       setShowAddForm(false);
       onRefresh();
     } catch (err: any) {
       setError(err?.message || 'Ürün eklenemedi.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const isMobileApp = (prod: Product) =>
+    prod.id in mobileOverrides ? mobileOverrides[prod.id] : prod.mobile_app === true;
+
+  const handleToggleMobileApp = async (prod: Product) => {
+    const next = !isMobileApp(prod);
+    try {
+      setMobileSavingId(prod.id);
+      setMobileOverrides((m) => ({ ...m, [prod.id]: next }));
+      await api.updateProductMobileApp(prod.productId || prod.id, next);
+      showToast(
+        'success',
+        next
+          ? `"${prod.name}" mobil uygulamada kullanılır olarak işaretlendi.`
+          : `"${prod.name}" için mobil uygulama işareti kaldırıldı.`
+      );
+      onRefresh();
+    } catch (err: any) {
+      setMobileOverrides((m) => ({ ...m, [prod.id]: !next }));
+      showToast('error', err?.message || 'Ürün güncellenemedi.');
+    } finally {
+      setMobileSavingId(null);
     }
   };
 
@@ -242,6 +274,21 @@ export const ProductManager: React.FC<ProductManagerProps> = ({
               />
             </div>
 
+            <label className="sm:col-span-2 flex items-start gap-2 text-xs text-[#1e293b] cursor-pointer">
+              <input
+                type="checkbox"
+                checked={mobileApp}
+                onChange={(e) => setMobileApp(e.target.checked)}
+                className="mt-0.5"
+              />
+              <span>
+                <span className="font-semibold">Mobil uygulamada kullanılır</span>
+                <span className="block text-[10px] text-[#64748b]">
+                  İşaretliyse, bu ürünün kurum adresi girilmiş aktif lisansları Sosyalritim mobil uygulamasının kurum listesinde görünür.
+                </span>
+              </span>
+            </label>
+
             <div className="sm:col-span-2 flex justify-end space-x-2 pt-2 border-t border-[#e2e8f0]">
               <button
                 type="button"
@@ -290,6 +337,26 @@ export const ProductManager: React.FC<ProductManagerProps> = ({
                 {prod.description || 'Açıklama girilmemiş.'}
               </p>
             </div>
+
+            <label
+              className={`flex items-center justify-between gap-3 px-3 py-2 rounded-lg border text-xs cursor-pointer transition ${
+                isMobileApp(prod)
+                  ? 'bg-[#f5f3ff] border-[#ddd6fe] text-[#6d28d9]'
+                  : 'bg-[#f8fafc] border-[#e2e8f0] text-[#64748b]'
+              }`}
+            >
+              <span className="flex items-center gap-1.5 font-semibold">
+                <Smartphone className="w-3.5 h-3.5 shrink-0" />
+                <span>Mobil uygulamada kullanılır</span>
+              </span>
+              <input
+                type="checkbox"
+                checked={isMobileApp(prod)}
+                disabled={mobileSavingId === prod.id}
+                onChange={() => handleToggleMobileApp(prod)}
+                className="w-4 h-4 shrink-0 cursor-pointer disabled:opacity-60"
+              />
+            </label>
 
             {/* License counts and Actions */}
             <div className="pt-3 border-t border-[#f1f5f9] flex items-center justify-between">

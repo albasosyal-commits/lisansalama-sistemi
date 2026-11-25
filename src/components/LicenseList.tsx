@@ -18,6 +18,7 @@ import {
   Play,
   Settings,
   History,
+  Smartphone,
 } from 'lucide-react';
 import { Product, StoredLicense } from '../types';
 import { api } from '../services/api';
@@ -147,6 +148,7 @@ export const LicenseList: React.FC<LicenseListProps> = ({
     used: 'Doğrulandı (Giriş)',
     reset_usage: 'Kullanım Sıfırlandı',
     removed_from_app: 'Uygulamadan Silindi',
+    app_domain: 'Kurum Adresi',
   };
 
   const getLastActionInfo = (license: StoredLicense) => {
@@ -497,6 +499,15 @@ export const LicenseList: React.FC<LicenseListProps> = ({
                         <div className="text-[10px] font-mono text-[#94a3b8] mt-0.5">
                           ID: {lic.license_id.slice(0, 8)}...
                         </div>
+                        {lic.app_domain && (
+                          <div
+                            className="mt-1 inline-flex items-center gap-1 max-w-[220px] text-[10px] font-mono text-[#6d28d9] bg-[#f5f3ff] border border-[#ddd6fe] px-1.5 py-0.5 rounded"
+                            title="Kurum adresi (Sosyalritim mobil uygulaması)"
+                          >
+                            <Smartphone className="w-3 h-3 shrink-0" />
+                            <span className="truncate">{lic.app_domain}</span>
+                          </div>
+                        )}
                       </td>
 
                       {/* Product ID */}

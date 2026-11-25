@@ -45,6 +45,8 @@ export interface Product {
   created_at: string;
   licenseCount?: number;
   activeLicenseCount?: number;
+  /** Sosyalritim mobil uygulamasında kullanılan ürün mü (onaylı kulüp listesi için) */
+  mobile_app?: boolean;
 }
 
 export interface LicenseActivityLog {
@@ -60,7 +62,8 @@ export interface LicenseActivityLog {
     | 'activated'
     | 'used'
     | 'reset_usage'
-    | 'removed_from_app';
+    | 'removed_from_app'
+    | 'app_domain';
   description: string;
   details?: Record<string, any>;
 }
@@ -101,6 +104,8 @@ export interface StoredLicense {
   app_version?: string | null;
   removed_from_app?: boolean;
   removed_from_app_at?: string | null;
+  /** Kulübün site adresi (Sosyalritim mobil uygulaması). İmzalı payload'a GİRMEZ. */
+  app_domain?: string | null;
 }
 
 // AES-256-GCM Encryption
@@ -664,7 +669,8 @@ export function addLicenseLog(
     | 'activated'
     | 'used'
     | 'reset_usage'
-    | 'removed_from_app',
+    | 'removed_from_app'
+    | 'app_domain',
   description: string,
   details?: Record<string, any>
 ) {

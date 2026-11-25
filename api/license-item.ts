@@ -9,12 +9,14 @@ import {
   signLicensePayload,
   LicensePayload,
 } from '../server/firebaseAdmin.js';
+import { normalizeAppDomain } from '../server/appDomain.js';
 
 // Tek dosyada birleştirilmiş (vercel.json rewrite'larıyla yönlendirilir):
 //   DELETE /api/licenses/:id          -> /api/license-item?id=:id
 //   PATCH  /api/licenses/:id/status   -> /api/license-item?id=:id&action=status
 //   PATCH  /api/licenses/:id/extend   -> /api/license-item?id=:id&action=extend
 //   PATCH  /api/licenses/:id/usage    -> /api/license-item?id=:id&action=usage
+//   PATCH  /api/licenses/:id/app      -> /api/license-item?id=:id&action=app
 export default async function handler(
   req: IncomingMessage & { body?: any; query?: any },
   res: ServerResponse
@@ -320,6 +322,55 @@ export default async function handler(
           success: true,
           data: lic,
           message: "Lisans kullanım durumu sıfırlandı ('Kullanımda Değil').",
+        })
+      );
+      return;
+    }
+
+    // ------------------------------------------------------------
+    // PATCH /api/licenses/:id/app  — Sosyalritim mobil uygulaması kurum adresi
+    // ------------------------------------------------------------
+    if (req.method === 'PATCH' && action === 'app') {
+      const raw = (req.body || {}).app_domain;
+      const isClear = raw === null || raw === undefined || (typeof raw === 'string' && raw.trim() === '');
+      const appDomain = isClear ? null : normalizeAppDomain(raw);
+      if (!isClear && !appDomain) {
+        res.statusCode = 400;
+        res.end(
+          JSON.stringify({
+            success: false,
+            message: 'Geçersiz kurum adresi. Örnek: akcaysk.sosyalritim.com.tr',
+          })
+        );
+        return;
+      }
+
+      const lic = await getLicenseById(id);
+      if (!lic) {
+        res.statusCode = 404;
+        res.end(JSON.stringify({ success: false, message: 'Lisans bulunamadı.' }));
+        return;
+      }
+
+      const nowIso = new Date().toISOString();
+      const previous = lic.app_domain || null;
+      await updateLicenseFields(lic.license_id, { app_domain: appDomain }, {
+        id: 'log-' + crypto.randomUUID(),
+        timestamp: nowIso,
+        action: 'app_domain',
+        description: appDomain
+          ? `Kurum adresi (Sosyalritim mobil uygulaması) "${appDomain}" olarak ayarlandı.`
+          : 'Kurum adresi (Sosyalritim mobil uygulaması) kaldırıldı.',
+        details: { previous_app_domain: previous, app_domain: appDomain },
+      });
+      lic.app_domain = appDomain;
+
+      res.statusCode = 200;
+      res.end(
+        JSON.stringify({
+          success: true,
+          data: lic,
+          message: appDomain ? 'Kurum adresi kaydedildi.' : 'Kurum adresi kaldırıldı.',
         })
       );
       return;

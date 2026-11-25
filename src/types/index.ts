@@ -4,7 +4,7 @@ export type LicenseStatus = 'active' | 'revoked' | 'paused' | 'expired';
 export interface LicenseActivityLog {
   id: string;
   timestamp: string;
-  action: 'created' | 'extended' | 'paused' | 'unpaused' | 'revoked' | 'reactivated' | 'activated' | 'used' | 'reset_usage' | 'removed_from_app';
+  action: 'created' | 'extended' | 'paused' | 'unpaused' | 'revoked' | 'reactivated' | 'activated' | 'used' | 'reset_usage' | 'removed_from_app' | 'app_domain';
   description: string;
   details?: Record<string, any>;
 }
@@ -18,6 +18,8 @@ export interface Product {
   created_at: string;
   licenseCount?: number;
   activeLicenseCount?: number;
+  /** Sosyalritim mobil uygulamasında kullanılan ürün mü (onaylı kulüp listesi için) */
+  mobile_app?: boolean;
 }
 
 export interface LicensePayload {
@@ -57,6 +59,8 @@ export interface StoredLicense {
   app_version?: string | null;
   removed_from_app?: boolean;
   removed_from_app_at?: string | null;
+  /** Kulübün site adresi (Sosyalritim mobil uygulaması). İmzalı payload'a GİRMEZ. */
+  app_domain?: string | null;
 }
 
 export interface DashboardStats {
@@ -100,6 +104,7 @@ export interface CreateLicenseParams {
   machine_id?: string;
   notes?: string;
   extra?: Record<string, unknown>;
+  app_domain?: string | null;
 }
 
 export interface VerificationResult {

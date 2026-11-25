@@ -14,12 +14,14 @@ import {
   ArrowRight,
   Info,
   Clock,
+  Smartphone,
 } from 'lucide-react';
 import { CreateLicenseParams, LicenseType, Product, StoredLicense } from '../types';
 import { api } from '../services/api';
 import { MoneyInput } from './finance/MoneyInput';
 import { financeApi } from '../services/financeApi';
 import type { MoneyFields } from '../types/finance';
+import { normalizeAppDomain } from '../../server/appDomain';
 
 interface LicenseGeneratorProps {
   products: Product[];
@@ -46,6 +48,7 @@ export const LicenseGenerator: React.FC<LicenseGeneratorProps> = ({
   });
   const [machineId, setMachineId] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
+  const [appDomain, setAppDomain] = useState<string>('');
   const [withPrice, setWithPrice] = useState<boolean>(false);
   const [price, setPrice] = useState<MoneyFields | null>(null);
   const [financeWarning, setFinanceWarning] = useState<string | null>(null);
@@ -118,6 +121,12 @@ export const LicenseGenerator: React.FC<LicenseGeneratorProps> = ({
       return;
     }
 
+    const cleanAppDomain = appDomain.trim() ? normalizeAppDomain(appDomain) : null;
+    if (appDomain.trim() && !cleanAppDomain) {
+      setError('Kurum adresi geçersiz. Örnek: akcaysk.sosyalritim.com.tr');
+      return;
+    }
+
     if (withPrice && !price) {
       setError('Lisans ücreti eksik veya geçersiz (tutar ve döviz kuru gerekli). Ücret girmeyecekseniz kutucuğu kaldırın.');
       return;
@@ -147,6 +156,7 @@ export const LicenseGenerator: React.FC<LicenseGeneratorProps> = ({
         machine_id: machineId.trim() || undefined,
         notes: notes.trim() || undefined,
         extra: Object.keys(extra).length > 0 ? extra : undefined,
+        app_domain: cleanAppDomain || undefined,
       };
 
       const res = await api.createLicense(params);
@@ -309,6 +319,35 @@ export const LicenseGenerator: React.FC<LicenseGeneratorProps> = ({
                 placeholder="Örn: Acme A.Ş. / musteri@firma.com"
                 className="w-full bg-white border border-[#cbd5e1] rounded-lg px-3.5 py-2.5 text-sm text-[#1e293b] placeholder-slate-400 focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6] outline-none transition"
               />
+            </div>
+
+            {/* Sosyalritim mobil uygulaması: kulübün site adresi (imzalı anahtara girmez) */}
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-[#64748b] mb-1.5">
+                <span className="flex items-center space-x-1.5">
+                  <Smartphone className="w-3.5 h-3.5 text-[#3b82f6]" />
+                  <span>Kurum adresi (Sosyalritim mobil uygulaması)</span>
+                </span>
+              </label>
+              <input
+                id="input-app-domain"
+                type="text"
+                inputMode="url"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                value={appDomain}
+                onChange={(e) => setAppDomain(e.target.value)}
+                onBlur={() => {
+                  const n = normalizeAppDomain(appDomain);
+                  if (n) setAppDomain(n);
+                }}
+                placeholder="ör. akcaysk.sosyalritim.com.tr"
+                className="w-full bg-white border border-[#cbd5e1] rounded-lg px-3.5 py-2.5 text-sm font-mono text-[#1e293b] placeholder-slate-400 focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6] outline-none transition"
+              />
+              <p className="mt-1 text-[11px] text-[#64748b]">
+                Opsiyonel. Ürün "Mobil uygulamada kullanılır" işaretliyse ve lisans aktifse kulüp mobil uygulamanın kurum listesinde görünür. Lisans anahtarını değiştirmez.
+              </p>
             </div>
 
             {/* License Type Selection (Geometric Balance Style) */}

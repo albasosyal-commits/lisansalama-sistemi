@@ -8,6 +8,7 @@ import {
   deleteDoc,
   query,
   orderBy,
+  arrayUnion,
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import {
@@ -19,6 +20,7 @@ import {
   VerificationResult,
 } from '../types';
 import { DEFAULT_KEY_METADATA } from '../data/defaultKeys';
+import { normalizeAppDomain } from '../../server/appDomain';
 
 const PRODUCTS_COLLECTION = 'license_products';
 const LICENSES_COLLECTION = 'licenses';
@@ -268,6 +270,7 @@ export const api = {
               description: data.description || '',
               version: data.version || '1.0.0',
               created_at: data.created_at || data.createdAt || new Date().toISOString(),
+              mobile_app: data.mobile_app === true,
             });
           }
         });
@@ -304,6 +307,7 @@ export const api = {
     productId: string;
     description?: string;
     version?: string;
+    mobile_app?: boolean;
   }): Promise<Product> {
     const cleanProductId = product.productId.trim().toLowerCase().replace(/[^a-z0-9-_]/g, '-');
     const newProduct: Product = {
@@ -313,6 +317,7 @@ export const api = {
       description: product.description ? product.description.trim() : '',
       version: product.version ? product.version.trim() : '1.0.0',
       created_at: new Date().toISOString(),
+      mobile_app: product.mobile_app === true,
     };
 
     let resultProduct = newProduct;
@@ -346,6 +351,36 @@ export const api = {
     safeFirestoreSync(setDoc(doc(db, PRODUCTS_COLLECTION, cleanProductId), resultProduct));
 
     return resultProduct;
+  },
+
+  async updateProductMobileApp(id: string, mobileApp: boolean): Promise<void> {
+    const cleanId = id.trim().toLowerCase();
+    let serverOk = false;
+
+    // 1. Sunucu
+    try {
+      const res = await fetch(`/api/products/${cleanId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mobile_app: mobileApp }),
+      });
+      const json = await res.json().catch(() => ({ message: 'Sunucu geçersiz yanıt döndürdü (JSON parse hatası).' }));
+      if (res.ok) {
+        serverOk = true;
+      } else {
+        console.warn('Server product update note:', json.message);
+      }
+    } catch (err) {
+      console.warn('Server product update note:', err);
+    }
+
+    // 2. Doğrudan Firestore (sunucu yolu çalışmasa da işaret kalıcı olsun)
+    const write = setDoc(doc(db, PRODUCTS_COLLECTION, cleanId), { mobile_app: mobileApp }, { merge: true });
+    if (serverOk) {
+      safeFirestoreSync(write);
+    } else {
+      await withTimeout(write, 5000);
+    }
   },
 
   async deleteProduct(id: string): Promise<void> {
@@ -520,6 +555,53 @@ export const api = {
     safeFirestoreSync(setDoc(doc(db, LICENSES_COLLECTION, id), updatedLicense));
 
     return updatedLicense;
+  },
+
+  /** Kurum adresini kaydeder/siler; kaydedilen (normalleştirilmiş) adresi ya da null döner. */
+  async updateLicenseAppDomain(id: string, appDomain: string | null): Promise<string | null> {
+    const isClear = !appDomain || !appDomain.trim();
+    const clean = isClear ? null : normalizeAppDomain(appDomain);
+    if (!isClear && !clean) {
+      throw new Error('Geçersiz kurum adresi. Örnek: akcaysk.sosyalritim.com.tr');
+    }
+
+    // 1. Sunucu (log kaydını da o yazar)
+    try {
+      const res = await fetch(`/api/licenses/${id}/app`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ app_domain: clean }),
+      });
+      const json = await res.json().catch(() => ({ message: 'Sunucu geçersiz yanıt döndürdü (JSON parse hatası).' }));
+      if (res.ok) {
+        safeFirestoreSync(updateDoc(doc(db, LICENSES_COLLECTION, id), { app_domain: clean }));
+        return clean;
+      }
+      if (res.status === 400) throw new Error(json.message || 'Kurum adresi kaydedilemedi.');
+      console.warn('Server app_domain update note:', json.message);
+    } catch (err: any) {
+      if (err instanceof Error && err.message.startsWith('Geçersiz')) throw err;
+      console.warn('Server app_domain update note:', err?.message || err);
+    }
+
+    // 2. Sunucu yolu çalışmazsa doğrudan Firestore (imzalı anahtar değişmez)
+    const nowIso = new Date().toISOString();
+    await withTimeout(
+      updateDoc(doc(db, LICENSES_COLLECTION, id), {
+        app_domain: clean,
+        logs: arrayUnion({
+          id: 'log-' + (globalThis.crypto?.randomUUID?.() || Date.now().toString(36)),
+          timestamp: nowIso,
+          action: 'app_domain',
+          description: clean
+            ? `Kurum adresi (Sosyalritim mobil uygulaması) "${clean}" olarak ayarlandı.`
+            : 'Kurum adresi (Sosyalritim mobil uygulaması) kaldırıldı.',
+          details: { app_domain: clean },
+        }),
+      }),
+      5000
+    );
+    return clean;
   },
 
   async extendLicense(

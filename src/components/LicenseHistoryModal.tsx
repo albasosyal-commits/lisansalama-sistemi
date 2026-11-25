@@ -1,5 +1,5 @@
 import React from 'react';
-import { History, X, Clock, Play, Pause, ShieldAlert, ShieldCheck, PlusCircle, Calendar } from 'lucide-react';
+import { History, X, Clock, Play, Pause, ShieldAlert, ShieldCheck, PlusCircle, Calendar, Smartphone } from 'lucide-react';
 import { StoredLicense } from '../types';
 
 interface LicenseHistoryModalProps {
@@ -61,6 +61,12 @@ export const LicenseHistoryModal: React.FC<LicenseHistoryModalProps> = ({
           icon: <ShieldCheck className="w-4 h-4 text-[#16a34a]" />,
           bg: 'bg-[#f0fdf4] text-[#15803d] border-[#bbf7d0]',
           label: 'Yeniden Aktif Edildi',
+        };
+      case 'app_domain':
+        return {
+          icon: <Smartphone className="w-4 h-4 text-[#7c3aed]" />,
+          bg: 'bg-[#f5f3ff] text-[#6d28d9] border-[#ddd6fe]',
+          label: 'Kurum Adresi',
         };
       default:
         return {

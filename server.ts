@@ -30,7 +30,11 @@ import {
   addLicenseLog,
   signLicensePayload,
   verifyLicenseKeyString,
+  updateLicenseFields,
+  getProducts as getProductsDirect,
+  getLicenses as getLicensesDirect,
 } from "./server/firebaseAdmin";
+import { normalizeAppDomain, selectApprovedClubs } from "./server/appDomain";
 
 const PORT = 3000;
 
@@ -227,7 +231,7 @@ async function startServer() {
 
   app.post("/api/products", async (req, res) => {
     try {
-      const { name, productId, description, version } = req.body;
+      const { name, productId, description, version, mobile_app } = req.body;
       if (!name || !productId) {
         return res.status(400).json({
           success: false,
@@ -255,6 +259,7 @@ async function startServer() {
         description: description ? description.trim() : "",
         version: version ? version.trim() : "1.0.0",
         created_at: new Date().toISOString(),
+        mobile_app: mobile_app === true,
       };
 
       await saveProduct(newProduct);
@@ -266,6 +271,34 @@ async function startServer() {
       });
     } catch (e: any) {
       res.status(500).json({ success: false, message: e?.message || "Ürün eklenemedi." });
+    }
+  });
+
+  // Ürün işaretleri (şimdilik yalnız "Mobil uygulamada kullanılır")
+  app.patch("/api/products/:id", async (req, res) => {
+    try {
+      const { mobile_app } = req.body || {};
+      if (typeof mobile_app !== "boolean") {
+        return res.status(400).json({ success: false, message: "mobile_app alanı true/false olmalıdır." });
+      }
+      const cleanId = String(req.params.id).trim().toLowerCase();
+      const products = await getProductsDirect();
+      const product = products.find((p) => p.id === cleanId || p.productId === cleanId);
+      if (!product) {
+        return res.status(404).json({ success: false, message: "Ürün bulunamadı." });
+      }
+      const { licenseCount, activeLicenseCount, ...rest } = product;
+      const updated: Product = { ...rest, mobile_app };
+      await saveProduct(updated);
+      res.json({
+        success: true,
+        data: updated,
+        message: mobile_app
+          ? "Ürün mobil uygulamada kullanılır olarak işaretlendi."
+          : "Ürünün mobil uygulama işareti kaldırıldı.",
+      });
+    } catch (e: any) {
+      res.status(500).json({ success: false, message: e?.message || "Ürün güncellenemedi." });
     }
   });
 
@@ -365,6 +398,7 @@ async function startServer() {
         machine_id,
         notes,
         extra,
+        app_domain,
       } = req.body;
 
       if (!product_id || !customer || !license_type) {
@@ -438,6 +472,8 @@ async function startServer() {
         created_at: new Date().toISOString(),
         notes: notes ? notes.trim() : undefined,
         extra: payload.extra,
+        // İmzalı payload'a girmez (imza değişmesin diye) — sadece kayıtta tutulur.
+        app_domain: normalizeAppDomain(app_domain),
         logs: [],
         // Usage initialization
         is_used: false,
@@ -638,6 +674,48 @@ async function startServer() {
     }
   });
 
+  // Sosyalritim mobil uygulaması kurum adresi (imzalı payload'a girmez)
+  app.patch("/api/licenses/:id/app", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const raw = (req.body || {}).app_domain;
+      const isClear = raw === null || raw === undefined || (typeof raw === "string" && raw.trim() === "");
+      const appDomain = isClear ? null : normalizeAppDomain(raw);
+      if (!isClear && !appDomain) {
+        return res.status(400).json({
+          success: false,
+          message: "Geçersiz kurum adresi. Örnek: akcaysk.sosyalritim.com.tr",
+        });
+      }
+
+      const lic = await getLicenseById(id);
+      if (!lic) {
+        return res.status(404).json({ success: false, message: "Lisans bulunamadı." });
+      }
+
+      const nowIso = new Date().toISOString();
+      const previous = lic.app_domain || null;
+      await updateLicenseFields(lic.license_id, { app_domain: appDomain }, {
+        id: "log-" + crypto.randomUUID(),
+        timestamp: nowIso,
+        action: "app_domain",
+        description: appDomain
+          ? `Kurum adresi (Sosyalritim mobil uygulaması) "${appDomain}" olarak ayarlandı.`
+          : "Kurum adresi (Sosyalritim mobil uygulaması) kaldırıldı.",
+        details: { previous_app_domain: previous, app_domain: appDomain },
+      });
+      lic.app_domain = appDomain;
+
+      res.json({
+        success: true,
+        data: lic,
+        message: appDomain ? "Kurum adresi kaydedildi." : "Kurum adresi kaldırıldı.",
+      });
+    } catch (e: any) {
+      res.status(500).json({ success: false, message: e?.message || "Kurum adresi güncellenemedi." });
+    }
+  });
+
   app.delete("/api/licenses/:id", async (req, res) => {
     try {
       const { id } = req.params;
@@ -820,6 +898,22 @@ async function startServer() {
   // ----------------------------------------------------
   // 7. Online Verification Endpoint for External Applications (REST API)
   // ----------------------------------------------------
+  // Herkese açık: Sosyalritim mobil uygulaması için onaylı kulüp listesi
+  // (api/v1/apps.ts ile aynı mantık — server/appDomain.ts → selectApprovedClubs)
+  app.get("/api/v1/apps", async (req, res) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+    try {
+      const [licenses, products] = await Promise.all([getLicensesDirect(), getProductsDirect()]);
+      const clubs = selectApprovedClubs(licenses, products);
+      res.setHeader("Cache-Control", "public, s-maxage=300, max-age=60");
+      res.json({ success: true, clubs });
+    } catch (e: any) {
+      res.setHeader("Cache-Control", "no-store");
+      res.status(500).json({ success: false, message: "Kulüp listesi alınamadı." });
+    }
+  });
+
   app.post("/api/v1/verify", async (req, res) => {
     try {
       const { license_key, product_id, machine_id, app_version } = req.body;

@@ -9,6 +9,7 @@ import {
   StoredLicense,
   LicensePayload,
 } from '../server/firebaseAdmin.js';
+import { normalizeAppDomain } from '../server/appDomain.js';
 
 export default async function handler(
   req: IncomingMessage & { body?: any; query?: any },
@@ -93,6 +94,7 @@ export default async function handler(
         machine_id,
         notes,
         extra,
+        app_domain,
       } = req.body || {};
 
       if (!product_id || !customer || !license_type) {
@@ -174,6 +176,8 @@ export default async function handler(
         created_at: new Date().toISOString(),
         notes: notes ? String(notes).trim() : undefined,
         extra: payload.extra,
+        // İmzalı payload'a girmez (imza değişmesin diye) — sadece kayıtta tutulur.
+        app_domain: normalizeAppDomain(app_domain),
         logs: [],
         is_used: false,
         usage_count: 0,

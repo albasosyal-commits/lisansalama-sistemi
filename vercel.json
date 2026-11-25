@@ -7,6 +7,7 @@
     { "source": "/api/licenses/:id/status", "destination": "/api/license-item?id=:id&action=status" },
     { "source": "/api/licenses/:id/extend", "destination": "/api/license-item?id=:id&action=extend" },
     { "source": "/api/licenses/:id/usage", "destination": "/api/license-item?id=:id&action=usage" },
+    { "source": "/api/licenses/:id/app", "destination": "/api/license-item?id=:id&action=app" },
     { "source": "/api/licenses/:id", "destination": "/api/license-item?id=:id" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
