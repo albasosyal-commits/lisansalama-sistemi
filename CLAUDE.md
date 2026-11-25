@@ -163,3 +163,17 @@ npm test          # vitest run (finans hesaplama testleri)
 - Fetch çağrılarında `res.json().catch(() => ({ message: '...JSON parse hatası...' }))` deseni tekrar tekrar kullanılıyor (boş/geçersiz yanıtlarda "Unexpected end of JSON input" hatasını önlemek için) — yeni fetch çağrıları eklerken aynı deseni izle.
 - Firestore yazmaları çoğunlukla `safeFirestoreSync` / `withTimeout` yardımcılarıyla **non-blocking** yapılıyor (arka planda dener, hata olursa sadece `console.warn`) — kullanıcı akışını Firestore gecikmesi/hatası bloklamasın diye.
 - Yeni bir `/api/*` route eklerken hem `server.ts`'e (yerel) HEM `api/` altına ayrı bir serverless function dosyası olarak eklemeyi unutma — aksi halde Vercel'de çalışmaz (bkz. Mimari bölümü).
+
+## Sosyalritim mobil uygulaması — kurum adresi ve onaylı kulüp listesi (25 Kasım 2026)
+
+- Lisansa `app_domain` ("Kurum adresi", ör. `akcaysk.sosyalritim.com.tr`), ürüne `mobile_app` ("Mobil uygulamada
+  kullanılır") eklendi. İmzalı lisans yüküne (LicensePayload) GİRMEZ; imzalar değişmez.
+- `GET /api/v1/apps` (herkese açık): ürünü `mobile_app` işaretli + `status=active` + süresi dolmamış + adresi dolu
+  lisansların yalnızca `{name, domain}` listesi (`server/appDomain.ts` → `selectApprovedClubs`). CDN önbelleği 5 dk:
+  lisansta yapılan değişiklik uygulamaya en geç ~5 dk sonra yansır.
+- Uygulama (`E:\uygulamalar\sosyalritim-app`) bu listeden YALNIZCA `*.sosyalritim.com.tr` adreslerini kabul eder.
+  Yeni kulüp kontrol listesi: `E:\uygulamalar\sosyalritim-app\docs\YENI_KULUP.md`.
+- Düzenleme uçları: `PATCH /api/licenses/:id/app` `{app_domain}`, `PATCH /api/products/:id` `{mobile_app}`.
+- DİKKAT: bu repoda `.git/hooks/post-commit` her commit'ten sonra `git push origin HEAD` yapar (commit = yayın).
+- Bilinen açık: panel girişi yalnızca tarayıcıda (localStorage şifre), API uçları ve Firestore kuralları herkese açık.
+  Gerçek giriş + kapalı kurallar ayrı iş (2. aşama).
